@@ -9,14 +9,8 @@
 #include <stdio.h>
 #include "HamletSort.h"
 
-int main() {
-
-//    char str1[] = "sdfsdfsdf\n";
-//    char str2[] = "kjkjljlkj\n";
-//    swapStrings(str1, str2);
-//    printf("%d", compareStrings(str1, str2));
-//    printf("%s %s\n", str1, str2);
-
+int main()
+{
     char filePath[100] = {};
     printf("Enter the file path (to read): ");
 
@@ -27,8 +21,8 @@ int main() {
     int nStrings = countStrings(filePath);
     int nSymbols = countSymbols(filePath);
 
-    char* textHamlet = readHamlet(filePath, nSymbols);
-    bubbleHamletSort(textHamlet, nStrings);
+    char** stringsList = readHamlet(filePath, nSymbols, nStrings);
+    bubbleHamletSort(stringsList, nStrings);
 
     printf("Enter the file path (to write in): ");
 
@@ -36,7 +30,7 @@ int main() {
         printf("Ooops.. Something went wrong( Try again");
     }
 
-    writeHamlet(filePath, textHamlet, nSymbols);
+    writeHamlet(filePath, stringsList, nStrings);
 
     return 0;
 }

@@ -17,19 +17,28 @@
  * @return pointer to the buffer
  */
 
-char* readHamlet(char* filePath, int nSymbols)
+char** readHamlet(char* filePath, int nSymbols, int nStrings)
 {
     assert(filePath != nullptr);
 
     FILE* fileHamlet = fopen(filePath, "r");
 
-    char* textHamlet = (char*) calloc(nSymbols, sizeof (char));
+    char* textHamlet = (char*) calloc(nSymbols + nStrings, sizeof (char));
+    char** strings = (char**) calloc(nStrings, sizeof (char*));
 
-    for (int curSymbol = 0; curSymbol < nSymbols; ++curSymbol)
-        textHamlet[curSymbol] = (char) fgetc(fileHamlet);
+    int maxStr = maxString(filePath);
+
+    for (int curString = 0; curString < nStrings; ++curString) {
+
+        strings[curString] = textHamlet;
+        fgets(textHamlet, maxStr, fileHamlet);
+        textHamlet += (int) strlen(strings[curString]) + 1;
+
+        printf("%d %d %s", curString, textHamlet, strings[curString]);
+    }
 
     fclose(fileHamlet);
-    return textHamlet;
+    return strings;
 }
 
 /**
@@ -39,18 +48,37 @@ char* readHamlet(char* filePath, int nSymbols)
  * @param[in] nSymbols the number of symbols in the file
  */
 
-void writeHamlet(char* filePath, char* textHamlet, int nSymbols)
+void writeHamlet(char* filePath, char** stringsList, int nStrings)
 {
-    assert(textHamlet != nullptr);
+    assert(stringsList != nullptr);
     assert(filePath != nullptr);
 
     FILE* outputHamlet = fopen(filePath, "w");
 
-    for (int symbol = 0; symbol < nSymbols; ++symbol)
-        fputc(textHamlet[symbol], outputHamlet);
+    for (int string = 0; string < nStrings; ++string)
+        fputs(stringsList[string], outputHamlet);
 
-    free(textHamlet);
+    free(stringsList);
     fclose(outputHamlet);
+}
+
+int maxString(char* filePath)
+{
+    FILE* fileHamlet = fopen(filePath, "r");
+
+    int maxString = 0;
+    int curString = 0;
+    char symbol = 0;
+
+    while ((symbol = (char) fgetc(fileHamlet)) != EOF) {
+        if (symbol == '\n')
+            maxString = (curString > maxString) ? curString : maxString;
+        else
+            ++curString;
+    }
+
+    fclose(fileHamlet);
+    return (curString > maxString) ? curString : maxString;
 }
 
 /**
@@ -59,17 +87,15 @@ void writeHamlet(char* filePath, char* textHamlet, int nSymbols)
  * @param[in,out] secondString pointer to the second string
  */
 
-void swapStrings(char* firstString, char* secondString)
+void swapStrings(int firstString, int secondString, char** stringsList)
 {
-    assert(firstString != nullptr);
-    assert(secondString != nullptr);
-    assert(stringLength(firstString) > 0);
+    assert(stringsList != nullptr);
 
-    char tempStr[stringLength(firstString)] = {};
+    char* temp = nullptr;
 
-    copyString(tempStr, firstString);
-    copyString(firstString, secondString);
-    copyString(secondString, tempStr);
+    temp = stringsList[firstString];
+    stringsList[firstString] = stringsList[secondString];
+    stringsList[secondString] = temp;
 }
 
 /**
@@ -83,80 +109,14 @@ int countSymbols(char* filePath)
     assert(filePath != nullptr);
 
     FILE* fileHamlet = fopen(filePath, "r");
+
     int nSymbols = 0;
 
     while (fgetc(fileHamlet) != EOF)
-        ++nSymbols;
+            ++nSymbols;
 
-    return nSymbols;
-}
-
-/**
- * Copies the source string to the destination string
- * @param[in,out] destString
- * @paramp[in] sourceString
- * @return number of copied symbols
- */
-
-void copyString(char* destString, char* sourceString)
-{
-    assert(sourceString != nullptr);
-    assert(destString != nullptr);
-
-    while (*sourceString != '\n') {
-        *destString++ = *sourceString++;
-    }
-
-    *destString = *sourceString;
-}
-
-/**
- * Finds the pseudo string's length
- * @param[in] string
- * @return the length of the string including the '\n' symbol
- */
-
-size_t stringLength(char* string)
-{
-    assert(string != nullptr);
-
-    size_t length = 1; // we suppose that the string consists at least of one '\n' symbol
-
-    while (*string++ != '\n')
-        ++length;
-
-    return length;
-}
-
-/**
- * Compares tow strings by its length
- * @param[in] firstString
- * @param[in] secondString
- * @return the special comparisonResult value
- */
-
-int compareStrings(char* firstString, char* secondString)
-{
-    assert(firstString != nullptr);
-    assert(secondString != nullptr);
-
-    int curIndex = 0;
-
-    while (firstString[curIndex] != '\n' && secondString[curIndex] != '\n') {
-        if (firstString[curIndex] > secondString[curIndex])
-            return FIRST;
-        else if (secondString[curIndex] > firstString[curIndex])
-            return SECOND;
-        else
-            ++curIndex;
-    }
-
-    int lenFirst = (int) stringLength(firstString);
-    int lenSecond = (int) stringLength(secondString);
-
-    if (lenFirst == lenSecond)
-        return EQUAL;
-    return (lenFirst > lenSecond) ? FIRST : SECOND;
+    fclose(fileHamlet);
+    return nSymbols; // including the last '\0' symbol
 }
 
 /**
@@ -185,53 +145,17 @@ int countStrings(char* filePath)
 }
 
 /**
- * Finds the address of the string on a certain position
- * @param[in,out] text
- * @param[in] position
- * @return pointer to the required string's beginning
- */
-
-char* getString(char* text, int position)
-{
-    while (position != 0) {
-
-        if (*text++ == '\n')
-            position--;
-    }
-
-    return text;
-}
-
-void print(char* string)
-{
-    while (*string != '\n')
-        putc(*string++, stdout);
-
-    putc('\n', stdout);
-}
-
-/**
  * Sorts the file using the bubble sort applied to the strings
  * @param[in,out] textHamlet the pointer to the buffer
  * @param[in] nStrings the number of the strings
  */
 
-void bubbleHamletSort(char* textHamlet, int nStrings)
+void bubbleHamletSort(char** stringsList, int nStrings)
 {
-    assert(textHamlet != nullptr);
+    assert(stringsList != nullptr);
 
-    char* firstString = nullptr;
-    char* secondString = nullptr;
-
-    for (int i = 0; i < nStrings; ++i) {
-
-        for (int j = i + 1; j < nStrings; ++j) {
-
-            firstString = getString(textHamlet, i);
-            secondString = getString(textHamlet, j);
-
-            if (compareStrings(firstString, secondString) == FIRST)
-                swapStrings(firstString, secondString);
-        }
-    }
+    for (int i = 0; i < nStrings; ++i)
+        for (int j = i + 1; j < nStrings; ++j)
+            if (strcmp(stringsList[i], stringsList[j]) > 0)
+                swapStrings(i, j, stringsList);
 }
