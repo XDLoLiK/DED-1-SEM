@@ -8,82 +8,269 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <sys\stat.h>
+#include <inttypes.h>
 #include "TextSort.h"
 
 /**
- * Scans the file with the source text and saves it in a buffer
- * @param[in] filePath path to the input file
- * @param[in] nStrings number of strings in the file
- * @return pointer to the buffer
+ * Gets all the file info
+ * @param fileObject pointer to the file "object"
+ * @return special ScanResult value
  */
 
-char** readText(char* filePath, int nStrings)
+int getInfo(file* fileObject)
 {
-    assert(filePath != nullptr);
+    assert(fileObject != nullptr);
 
-    FILE* inputFile = fopen(filePath, "r");
+    int result = getPath(fileObject);
+
+    // as the last string may not contain the '\n' symbol
+    fileObject->strings_n = countSymbols(fileObject->path, '\n') + 1;
+
+    getSize(fileObject);
+    getText(fileObject);
+
+    return result;
+}
+
+/**
+ * Scan the file text
+ * @param fileObject pointer to the file "object"
+ * @return pointer to the text start
+ */
+
+char* getText(file* fileObject)
+{
+    assert(fileObject != nullptr);
+
+    FILE* inputFile = fopen(fileObject->path, "r");
+
+    char* textPtr = (char*) calloc(fileObject->size, sizeof (char));
+    fileObject->text = textPtr;
+
+    fread(fileObject->text, sizeof (char), fileObject->size, inputFile);
+
+    fileObject->text[fileObject->size] = '\n';
+    getStrings(fileObject);
+
+    fclose(inputFile);
+    return textPtr;
+}
+
+/**
+ * Creates and fulfills a strings list for a file "object"
+ * @param fileObject pointer to the file "object"
+ * @return pointer to the strings list start
+ */
+
+string* getStrings(file* fileObject)
+{
+    assert(fileObject != nullptr);
+
+    fileObject->strings_list = (string*) calloc(fileObject->strings_n, sizeof (string));
+    fileObject->strings_list[0].start = fileObject->text;
+
+    char* buffer = fileObject->text;
+    int curString = 1;
+    int curLength = 1;
+
+    while (curString < fileObject->strings_n) { 
+        if (*buffer == '\n') {
+            fileObject->strings_list[curString].start = buffer + 1;
+            fileObject->strings_list[curString - 1].length = curLength;
+
+            curLength = 0;
+            ++curString;
+        }
+
+        ++curLength;
+        ++buffer;
+    }
+
+    fileObject->strings_list[curString - 1].length = curLength;
+
+    return fileObject->strings_list;
+}
+
+/**
+ * Scans the size of a file "object"
+ * @param fileObject pointer to the file "object"
+ * @return size of file in bytes excluding the '\r' symbols (or simply the number of chars)
+ */
+
+size_t getSize(file* fileObject)
+{
+    assert(fileObject != nullptr);
+
+    FILE* inputFile = fopen(fileObject->path, "r");
 
     struct stat fileInfo = {};
     fstat(fileno(inputFile), &fileInfo);
 
-    // we need 1 extra symbol for the last string's '\n'
-    char* buffer = (char*) calloc(fileInfo.st_size + 1, sizeof (char));
-    char** stringsList = (char**) calloc(nStrings, sizeof (char*));
-
-    fread(buffer, sizeof (char), fileInfo.st_size + 1, inputFile);
-    buffer[fileInfo.st_size] = '\n';
-
-    stringsList[0] = buffer;
-    int count = 1;
-
-    while (count < nStrings) {
-        if (*buffer == '\n')
-            stringsList[count++] = buffer + 1;
-
-        ++buffer;
-    }
+    // we need one extra symbol for an extra '\n'
+    size_t fileSize  = fileInfo.st_size + 1 - fileObject->strings_n;
+    fileObject->size = fileSize;
 
     fclose(inputFile);
-    return stringsList;
+    return fileSize;
 }
 
 /**
- * Creates a new file where puts the sorted version of the source text
- * @param[in] filePath path to the file to write in
- * @param[in] buffer pointer to the buffer with the sorted text
- * @param[in] nStrings the number of strings in the file
+ * Gets the "to read" file path from the user
+ * @param[in,out] fileObject the pointer to the file "object"
+ * @return special ScanResult value
  */
 
-void writeSorted(char* filePath, char** stringsList, int nStrings)
+int getPath(file* fileObject)
 {
-    assert(stringsList != nullptr);
-    assert(filePath != nullptr);
+    printf("Enter the file path (to read): ");
 
-    FILE* outputFile = fopen(filePath, "w");
+    if (!scanf("%s", fileObject->path))
+        return SCAN_FAIL;
 
-    for (int string = 0; string < nStrings; ++string)
-        fputl(stringsList[string], outputFile);
+    return SCAN_SUCCESS;
+}
 
-    free(stringsList);
+/**
+ * Puts the sorted version of the source text to the output file
+ * @param[in] fileObject pointer to the file "object"
+ * @param[in] outputPath the output file path
+ */
+
+void writeSorted(const file* fileObject, const char* outputPath)
+{
+    assert(fileObject->strings_list != nullptr);
+    assert(outputPath != nullptr);
+
+    FILE* outputFile = fopen(outputPath, "a");
+
+    for (int curString = 0; curString < fileObject->strings_n; ++curString)
+        fputl(fileObject->strings_list[curString].start, outputFile);
+
+    fputc('\n', outputFile);
+    fclose(outputFile);
+}
+
+/**
+ * Puts the unsorted version of the source text to the output file
+ * @param fileObject the copy of the file "object"
+ * @param outputPath
+ */
+
+void writeUnsorted(const file* fileObject, const char* outputPath)
+{
+    assert(fileObject->text != nullptr);
+    assert(outputPath != nullptr);
+
+    FILE* outputFile = fopen(outputPath, "a");
+
+    fwrite(fileObject->text, sizeof (char), fileObject->size, outputFile);
+    fputc('\n', outputFile);
+
     fclose(outputFile);
 }
 
 /**
  * Swaps two strings' pointers in the list
- * @param[in] firstString pointer to the first string
- * @param[in] secondString pointer to the second string
- * @param[in,out] stringsList pointer to the list of strings
+ * @param[in,out] firstString pointer to the first element
+ * @param[in,out] secondString pointer to the second element
+ * @param[in] elemSize size of 1 element
  */
 
-void swapStrings(int firstString, int secondString, char** stringsList)
+void swapElements(void* firstElem, void* secondElem, size_t elemSize)
 {
-    assert(stringsList != nullptr);
+    assert(firstElem != nullptr);
+    assert(secondElem != nullptr);
 
-    char* temporary = nullptr;
+    while (elemSize > 0) {
+        swap64(&firstElem, &secondElem, &elemSize);
+        swap32(&firstElem, &secondElem, &elemSize);
+        swap16(&firstElem, &secondElem, &elemSize);
+        swap8(&firstElem, &secondElem, &elemSize);
+    }
+}
 
-    temporary = stringsList[firstString];
-    stringsList[firstString] = stringsList[secondString];
-    stringsList[secondString] = temporary;
+/**
+ * Swaps 8 bits of two elements while possible
+ * @param[in,out] firstElem pointer to the pointer to the first element
+ * @param[in,out] secondElem pointer to the pointer to the second element
+ * @param[in,out] elemSize pointer to the size left to swap
+ */
+
+void swap8(void** firstElem, void** secondElem, size_t* elemSize)
+{
+    while (*elemSize >= 1) {
+        uint8_t buffer = *((uint8_t*) (*firstElem));
+        *((uint8_t*) (*firstElem)) = *((uint8_t*) (*secondElem));
+        *((uint8_t*) (*secondElem)) = buffer;
+
+        *elemSize -= 1;
+
+        *firstElem = (uint8_t*) (*firstElem) + 1;
+        *secondElem = (uint8_t*) (*secondElem) + 1;
+    }
+}
+
+/**
+ * Swaps 16 bits of two elements while possible
+ * @param[in,out] firstElem pointer to the pointer to the first element
+ * @param[in,out] secondElem pointer to the pointer to the second element
+ * @param[in,out] elemSize pointer to the size left to swap
+ */
+
+void swap16(void** firstElem, void** secondElem, size_t* elemSize)
+{
+    while (*elemSize >= 2) {
+        uint16_t buffer = *((uint16_t*) (*firstElem));
+        *((uint16_t*) (*firstElem)) = *((uint16_t*) (*secondElem));
+        *((uint16_t*) (*secondElem)) = buffer;
+
+        *elemSize -= 2;
+
+        *firstElem = (uint16_t*) (*firstElem) + 1;
+        *secondElem = (uint16_t*) (*secondElem) + 1;
+    }
+}
+
+/**
+ * Swaps 32 bits of two elements while possible
+ * @param[in,out] firstElem pointer to the pointer to the first element
+ * @param[in,out] secondElem pointer to the pointer to the second element
+ * @param[in,out] elemSize pointer to the size left to swap
+ */
+
+void swap32(void** firstElem, void** secondElem, size_t* elemSize)
+{
+    while (*elemSize >= 4) {
+        uint32_t buffer = *((uint32_t*) (*firstElem));
+        *((uint32_t*) (*firstElem)) = *((uint32_t*) (*secondElem));
+        *((uint32_t*) (*secondElem)) = buffer;
+
+        *elemSize -= 4;
+
+        *firstElem = (uint32_t*) (*firstElem) + 1;
+        *secondElem = (uint32_t*) (*secondElem) + 1;
+    }
+}
+
+/**
+ * Swaps 64 bits of two elements while possible
+ * @param[in,out] firstElem pointer to the pointer to the first element
+ * @param[in,out] secondElem pointer to the pointer to the second element
+ * @param[in,out] elemSize pointer to the size left to swap
+ */
+
+void swap64(void** firstElem, void** secondElem, size_t* elemSize)
+{
+    while (*elemSize >= 8) {
+        uint64_t buffer = *((uint64_t*) (*firstElem));
+        *((uint64_t*) (*firstElem)) = *((uint64_t*) (*secondElem));
+        *((uint64_t*) (*secondElem)) = buffer;
+
+        *elemSize -= 8;
+
+        *firstElem = (uint64_t*) (*firstElem) + 1;
+        *secondElem = (uint64_t*) (*secondElem) + 1;
+    }
 }
 
 /**
@@ -125,23 +312,39 @@ void fputl(char* string, FILE* outputFile)
 }
 
 /**
- * Computes the length of the string ending with a '\n'
- * @param[in] string pointer to the string to count symbols in
- * @return the length of a given string
+ * Finds out if the user needs help
+ * @param[in] nArgs number of arguments of a command line
+ * @param[in] argsList list of command line parameters
+ * @return true if there's a "-help" flag, false otherwise
  */
 
-int stringLength(char* string)
+bool wantsHelp(int nArgs, char** argsList)
 {
-    int length = 0;
+    for (int curArg = 0; curArg < nArgs; ++curArg)
+        if (strcmp(argsList[curArg], "-help") == 0)
+            return true;
 
-    while (*string++ != '\n')
-        ++length;
-
-    return length + 1;
+    return false;
 }
 
 /**
- * Compares two strings (from their beginnings)
+ * Prints help info to the console
+ */
+
+void getHelp()
+{
+    printf("~~Text sorter by Stas Goryainov~~\n\n"
+           "~version:        4.1\n"
+           "~last updated:   14/09/2021\n\n"
+           "~info:           Sorts the given file in alphabetic order. In particular:\n"
+           "                 Firstly, starting from the beginning of each string.\n"
+           "                 Then starting from the end of each string.\n"
+           "                 And then puts both variants consecutively in one file.\n"
+           "                 After all, puts the source text there as well.\n");
+}
+
+/**
+ * Compares two strings (starting from the beginning)
  * @param[in] firstString pointer to the first string
  * @param[in] secondString pointer to the second string
  * @return a special ComparisonResult value
@@ -152,30 +355,29 @@ int compareStrings(const void* firstString, const void* secondString)
     assert(firstString != nullptr);
     assert(secondString != nullptr);
 
-    char* first = (char*) firstString;
-    char* second = (char*) secondString;
+    string* first = (string*) firstString;
+    string* second = (string*) secondString;
 
-    int lenFirst = stringLength(first);
-    int lenSecond = stringLength(second);
-    int minLen = (lenFirst < lenSecond) ? lenSecond : lenFirst;
+    int curSymbol = 0;
 
-    for (int curSymbol = 0; curSymbol < minLen; ++curSymbol) {
+    while (first->start[curSymbol] != '\n' || second->start[curSymbol] != '\n') {
 
-        if (first[curSymbol] > second[curSymbol]) {
+        if (first->start[curSymbol] > second->start[curSymbol])
             return FIRST;
-        } else if (second[curSymbol] > first[curSymbol]) {
+        else if (second->start[curSymbol] > first->start[curSymbol])
             return SECOND;
-        }
+
+        ++curSymbol;
     }
 
-    if (lenFirst == lenSecond)
+    if (first->length == second->length)
         return EQUAL;
 
-    return (lenFirst > lenSecond) ? FIRST : SECOND;
+    return (first->length > second->length) ? FIRST : SECOND;
 }
 
 /**
- * Compares two strings (from their ends)
+ * Compares two strings (starting from the end)
  * @param[in] firstString pointer to the first string
  * @param[in] secondString pointer to the second string
  * @return a special ComparisonResult value
@@ -186,29 +388,48 @@ int reverseCompareStrings(const void* firstString, const void* secondString)
     assert(firstString != nullptr);
     assert(secondString != nullptr);
 
-    char* first = (char*) firstString;
-    char* second = (char*) secondString;
+    string* first = (string*) firstString;
+    string* second = (string*) secondString;
 
-    int lenFirst = stringLength(first);
-    int lenSecond = stringLength(second);
-    int minLen = (lenFirst < lenSecond) ? lenSecond : lenFirst;
+    int minLen = (first->length > second->length) ? second->length : first->length;
 
     for (int curSymbol = 0; curSymbol < minLen; ++curSymbol) {
 
-        if (first[lenFirst - curSymbol] > second[lenSecond - curSymbol]) {
+        if (first->start[first->length - curSymbol] > second->start[second->length - curSymbol]) {
             return FIRST;
-        } else if (second[curSymbol] > first[curSymbol]) {
+        } else if (second->start[second->length - curSymbol] > first->start[first->length - curSymbol]) {
             return SECOND;
         }
     }
 
-    if (lenFirst == lenSecond)
+    if (first->length == second->length)
         return EQUAL;
 
-    return (lenFirst > lenSecond) ? FIRST : SECOND;
+    return (first->length > second->length) ? FIRST : SECOND;
 }
 
-int getPartion()
+/**
+ * Frees up the memory used by file "object"
+ * @param[in,out] fileObject pointer to the file "object"
+ */
+
+void freeInfo(file* fileObject)
+{
+    // frees up file's text
+    free(fileObject->text);
+    fileObject->text = nullptr;
+
+    // frees up strings list
+    free(fileObject->strings_list);
+    fileObject->strings_list = nullptr;
+}
+
+/**
+ *
+ * @return
+ */
+
+int getPartition()
 {
     return 0;
 }
@@ -219,9 +440,14 @@ int getPartion()
  * @param[in] nStrings the number of the strings
  */
 
-void quickTextSort(char** stringsList, int nStrings)
+void quickTextSort(void* start, size_t nElements, size_t elementSize, int (*comparator) (const void*, const void*))
 {
-    assert(stringsList != nullptr);
+    assert(start != nullptr);
+    assert(comparator != nullptr);
 
-
+    if (nElements > 1) {
+        size_t partition = getPartition();
+        quickTextSort(start, partition, elementSize, comparator);
+        quickTextSort((void*) ((char*) start + (partition + 1)), nElements - partition, elementSize, comparator);
+    }
 }

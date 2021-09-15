@@ -3,7 +3,7 @@
  *
  * @author Stas Goryainov
  * @date 04/09/2021
- * @version 3.0
+ * @version 4.1
  */
 
 #include <stdio.h>
@@ -11,36 +11,46 @@
 #include <search.h>
 #include "TextSort.h"
 
+// TODO: fileSort()
+// TODO: refactor comparator
+
+/**
+ * The main function
+ * @param argc number of command line parameters
+ * @param argv the list of command line parameters
+ * @return exit code
+ */
+
 int main(int argc, char* argv[])
 {
-    printf("Text sorter\n");
-    printf("By Stas Goryainov\n\n");
+    if (wantsHelp(argc, argv))
+        getHelp();
 
-    char filePath[100] = {};
-    printf("Enter the file path (to read): ");
+    file OneginFile = {};
 
-    if (!scanf("%s", filePath)) {
-        printf("Oops.. Something went wrong( Try again");
+    if (getInfo(&OneginFile) == SCAN_FAIL) {
+        printf("Oops.. Something went wrong( Try again\n");
         return 0;
     }
 
-    int nStrings = countSymbols(filePath, '\n') + 1; // the last string hasn't got the '\n'
-    char** stringsList = readText(filePath, nStrings);
+    char outputPath[MAX_PATH_SIZE] = {};
+    printf("Enter the output file path: ");
 
-    for (int i = 1; i < nStrings; ++i) {
-        printf("%d\n", compareStrings(stringsList[i], stringsList[i - 1]));
-    }
-
-    qsort((void*) stringsList, (size_t) nStrings, sizeof (char*), compareStrings);
-
-    printf("Enter the file path (to write in): ");
-
-    if (!scanf("%s", filePath)) {
-        printf("Oops.. Something went wrong( Try again");
+    if (!scanf("%s", outputPath)) {
+        printf("Oops.. Something went wrong( Try again\n");
         return 0;
     }
 
-    writeSorted(filePath, stringsList, nStrings);
+    // Using the standard qsort() first
+    qsort((void*) OneginFile.strings_list, OneginFile.strings_n, sizeof (string), compareStrings);
+    writeSorted(&OneginFile, outputPath);
+    // Then self written one
+    fileSort((void*) OneginFile.strings_list, (size_t) OneginFile.strings_n, sizeof (char*), reverseCompareStrings);
+    writeSorted(&OneginFile, outputPath);
+    // Showing that Pushkin's genius is undebatable
+    writeUnsorted(&OneginFile, outputPath);
+
+    freeInfo(&OneginFile);
 
     return 0;
 }
