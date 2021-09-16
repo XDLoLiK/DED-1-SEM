@@ -8,10 +8,11 @@
 #include <inttypes.h>
 #include <assert.h>
 
+//{------------------------------------------------------------------------------------------------
 /**
  * A "family" of swap n bytes functions
  */
-//{------------------------------------------------------------------------------------------------
+
 /**
  * Swaps 8 bits of two elements while possible
  * @param[in,out] firstElem pointer to the pointer to the first element
