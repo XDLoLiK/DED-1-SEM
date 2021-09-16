@@ -1,6 +1,6 @@
 # DedProjects
 
-~Text sorter by Stas Goryainov~
+~Text sorter by Stas Goryainov
 ~version:        4.1
 ~last updated:   14/09/2021
 ~info:           Sorts the given file in alphabetic order. In particular:
