@@ -6,29 +6,17 @@
  * @version 4.1
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <search.h>
+#include "Help.h"
 #include "TextSort.h"
-
-// TODO: fileSort()
-// TODO: refactor comparator
-
-/**
- * The main function
- * @param argc number of command line parameters
- * @param argv the list of command line parameters
- * @return exit code
- */
 
 int main(int argc, char* argv[])
 {
-    if (wantsHelp(argc, argv))
+    if (userWantsHelp(argc, argv))
         getHelp();
 
-    file OneginFile = {};
+    File OneginFile = {};
 
-    if (getInfo(&OneginFile) == SCAN_FAIL) {
+    if (File_ctor(&OneginFile) == SCAN_FAIL) {
         printf("Oops.. Something went wrong( Try again\n");
         return 0;
     }
@@ -36,21 +24,23 @@ int main(int argc, char* argv[])
     char outputPath[MAX_PATH_SIZE] = {};
     printf("Enter the output file path: ");
 
-    if (!scanf("%s", outputPath)) {
+    if (!scanf("%100s", outputPath)) {
         printf("Oops.. Something went wrong( Try again\n");
         return 0;
     }
 
     // Using the standard qsort() first
-    qsort((void*) OneginFile.strings_list, OneginFile.strings_n, sizeof (string), compareStrings);
-    writeSorted(&OneginFile, outputPath);
-    // Then self written one
-    fileSort((void*) OneginFile.strings_list, (size_t) OneginFile.strings_n, sizeof (char*), reverseCompareStrings);
-    writeSorted(&OneginFile, outputPath);
-    // Showing that Pushkin's genius is undebatable
-    writeUnsorted(&OneginFile, outputPath);
+    qsort((void*) OneginFile.strings_list, OneginFile.strings_n, sizeof (String), compareStrings);
+    writeSortedText(&OneginFile, outputPath, "append");
 
-    freeInfo(&OneginFile);
+    // Then self written one
+    quickTextSort((void*) OneginFile.strings_list, (size_t) OneginFile.strings_n, sizeof (String), reverseCompareStrings);
+    writeSortedText(&OneginFile, outputPath, "append");
+
+    // Showing that Pushkin's genius is undebatable
+    writeSourceText(&OneginFile, outputPath, "append");
+
+    File_dtor(&OneginFile);
 
     return 0;
 }
