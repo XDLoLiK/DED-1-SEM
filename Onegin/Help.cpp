@@ -8,11 +8,15 @@
 
 bool userWantsHelp(int nArgs, char** argsList)
 {
-    for (int curArg = 0; curArg < nArgs; ++curArg)
+    assert(nArgs > 0);
+    assert(argsList != nullptr);
+
+    for (int curArg = 0; curArg < nArgs; ++curArg) {
         if (strcmp(argsList[curArg], "-help") == 0)
             return true;
+    }
 
-        return false;
+    return false;
 }
 
 void getHelp()

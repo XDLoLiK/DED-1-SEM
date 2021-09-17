@@ -17,15 +17,15 @@
 #include "Swapper.h"
 
 /// Max path length
-const size_t MAX_PATH_SIZE = 100;
+const size_t MAX_PATH_SIZE = 256;
 
 //{------------------------------------------------------------------------------------------------
 /**
  * Struct implementation of a string object
  */
 typedef struct string {
-    char* start = nullptr;
     size_t length = 0;
+    char* start = nullptr;
 } String;
 //}------------------------------------------------------------------------------------------------
 
@@ -34,12 +34,12 @@ typedef struct string {
  * File "class"
  */
 typedef struct file {
-    size_t size_bytes = 0;
     size_t strings_n = 0;
+    size_t size_bytes = 0;
+    char path[MAX_PATH_SIZE] = {};
     char* text = nullptr;
     FILE* file_ptr = nullptr;
-    String* strings_list = nullptr; //~
-    char path[MAX_PATH_SIZE] = {};
+    String* strings_list = nullptr;
 } File;
 //}------------------------------------------------------------------------------------------------
 
@@ -49,9 +49,9 @@ typedef struct file {
  * comparison function results
  */
 enum ComparisonResult {
-    EQUAL  = 0, /// if two objects are equal
-    FIRST  = 1, /// if the first object is bigger
-    SECOND = -1 /// if the second object is bigger
+    EQUAL  =  0, /// if two objects are equal
+    FIRST  =  1, /// if the first object is bigger
+    SECOND = -1  /// if the second object is bigger
 };
 //}------------------------------------------------------------------------------------------------
 
@@ -78,6 +78,14 @@ enum ScanResult {
 int user_getPath(File* fileObject);
 
 /**
+ * Counts the total number of given symbols
+ * @param[in] searchFile the pointer to the input file
+ * @param[in] searchSymbol the symbol to search for
+ * @return the number of symbols
+ */
+int countSymbols(FILE* searchFile, char searchSymbol);
+
+/**
  * Initialises a File "object"
  * @param fileObject pointer to the file "object"
  * @return special ScanResult value
@@ -89,22 +97,14 @@ int File_ctor(File* fileObject);
  * @param fileObject pointer to the file "object"
  * @return pointer to the text start
  */
-char* readText(File* fileObject);
-
-/**
- * Counts the total number of given symbols
- * @param[in] searchFile the pointer to the input file
- * @param[in] searchSymbol the symbol to search for
- * @return the number of symbols
- */
-int countSymbols(FILE* searchFile, char searchSymbol);
+char* File_readText(File* fileObject);
 
 /**
  * Sets the size of a file "object"
  * @param fileObject pointer to the file "object"
  * @return size of file in bytes excluding the '\r' symbols (or simply the number of chars)
  */
-size_t setSize(File* fileObject);
+size_t File_setSize(File* fileObject);
 
 /**
  * Creates and fulfills a strings list for a file "object"

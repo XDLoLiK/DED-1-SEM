@@ -1,23 +1,34 @@
 /**
- * Swapper.cpp
+ * @file Swapper.cpp
  */
 
 #include "Swapper.h"
 
-void swapElements(void* firstElem, void* secondElem, size_t elemSize) // have to think about size. >1kb ??? //!
+void swapElements(void* firstElem, void* secondElem, size_t elemSize)
 {
     assert(firstElem != nullptr);
     assert(secondElem != nullptr);
 
-    while (elemSize > 0) {
-        swap64(&firstElem, &secondElem, &elemSize);
-        swap32(&firstElem, &secondElem, &elemSize);
-        swap16(&firstElem, &secondElem, &elemSize);
-        swap8(&firstElem, &secondElem, &elemSize);
+    // if object's size is bigger than 1Kb
+    if (elemSize >= 1024) {
+        void* temporary = calloc(1, elemSize);
+
+        memcpy(temporary, firstElem, elemSize);
+        memcpy(firstElem, secondElem, elemSize);
+        memcpy(secondElem, temporary, elemSize);
+    }
+    // if object's size isn't that big
+    else {
+        while (elemSize > 0) {
+            swap64(&firstElem, &secondElem, &elemSize);
+            swap32(&firstElem, &secondElem, &elemSize);
+            swap16(&firstElem, &secondElem, &elemSize);
+            swap8(&firstElem, &secondElem, &elemSize);
+        }
     }
 }
 
-void swap8(void** firstElem, void** secondElem, size_t* elemSize) //! copypast
+void swap8(void** firstElem, void** secondElem, size_t* elemSize) //! copy paste
 {
     while (*elemSize >= 1) {
         uint8_t buffer = *((uint8_t*) (*firstElem));

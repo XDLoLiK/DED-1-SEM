@@ -24,7 +24,8 @@ int main(int argc, char* argv[])
     char outputPath[MAX_PATH_SIZE] = {};
     printf("Enter the output file path: ");
 
-    if (!scanf("%100s", outputPath)) {
+    // 256 is the max output file's path length
+    if (!scanf("%256s", outputPath)) {
         printf("Oops.. Something went wrong( Try again\n");
         return 0;
     }

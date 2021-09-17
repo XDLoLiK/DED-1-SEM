@@ -18,13 +18,13 @@ int File_ctor(File* fileObject)
     // as the last string may not contain the '\n' symbol
     fileObject->strings_n = countSymbols(fileObject->file_ptr, '\n') + 1;
 
-    setSize(fileObject);
-    readText(fileObject);
+    File_setSize(fileObject);
+    File_readText(fileObject);
 
     return scanResult;
 }
 
-char* readText(File* fileObject)
+char* File_readText(File* fileObject)
 {
     assert(fileObject != nullptr);
     assert(fileObject->file_ptr != nullptr);
@@ -34,7 +34,7 @@ char* readText(File* fileObject)
 
     fread(fileObject->text, sizeof (char), fileObject->size_bytes, fileObject->file_ptr);
 
-    fileObject->text[fileObject->size_bytes] = '\n';
+    fileObject->text[fileObject->size_bytes - 1] = '\n';
     setStrings(fileObject);
 
     rewind(fileObject->file_ptr);
@@ -72,7 +72,7 @@ String* setStrings(File* fileObject)
     return fileObject->strings_list;
 }
 
-size_t setSize(File* fileObject)
+size_t File_setSize(File* fileObject)
 {
     assert(fileObject != nullptr);
     assert(fileObject->file_ptr != nullptr);
@@ -81,7 +81,7 @@ size_t setSize(File* fileObject)
     fstat(fileno(fileObject->file_ptr), &fileInfo);
 
     // we need one extra symbol for an extra '\n'
-    size_t fileSize  = fileInfo.st_size + 1 - fileObject->strings_n;
+    size_t fileSize  = fileInfo.st_size + 2 - fileObject->strings_n;
     fileObject->size_bytes = fileSize;
 
     rewind(fileObject->file_ptr);
@@ -92,7 +92,8 @@ int user_getPath(file* fileObject)
 {
     printf("Enter the file path (to read): ");
 
-    if (!scanf("%s", fileObject->path))
+    // 256 is the max input file's path length
+    if (!scanf("%256s", fileObject->path))
         return SCAN_FAIL;
 
     return SCAN_SUCCESS;
@@ -154,7 +155,7 @@ int countSymbols(FILE* searchFile, char searchSymbol)
     return nSymbols;
 }
 
-void fputl(char* string, FILE* outputFile) //!! use fputs, its faster, think of \0
+void fputl(char* string, FILE* outputFile) //!! use fputs, its faster, think of '\0'
 {
     while (*string != '\n')
         fputc(*string++, outputFile);
@@ -174,12 +175,10 @@ int compareStrings(const void* firstString, const void* secondString)
 
     while (first->start[curSymbol] != '\n' && second->start[curSymbol] != '\n') {
 
-        if (first->start[curSymbol] >= '0' && second->start[curSymbol] >= '0') {
-            if (first->start[curSymbol] > second->start[curSymbol])
-                return FIRST;
-            else if (second->start[curSymbol] > first->start[curSymbol])
-                return SECOND;
-        }
+        if (first->start[curSymbol] > second->start[curSymbol])
+            return FIRST;
+        else if (second->start[curSymbol] > first->start[curSymbol])
+            return SECOND;
 
         ++curSymbol;
     }
@@ -196,18 +195,16 @@ int reverseCompareStrings(const void* firstString, const void* secondString)
     assert(secondString != nullptr);
 
     String* first = (String*) firstString;
-    String* second = (string*) secondString;
+    String* second = (String*) secondString;
 
-    int minLen = (first->length > second->length) ? second->length : first->length;
+    size_t minLen = (first->length > second->length) ? second->length : first->length;
 
     for (int curSymbol = 1; curSymbol < minLen; ++curSymbol) {
 
-        if (first->start[curSymbol] >= '0' && second->start[curSymbol] >= '0') {
-            if (first->start[first->length - curSymbol] > second->start[second->length - curSymbol])
-                return FIRST;
-            else if (second->start[second->length - curSymbol] > first->start[first->length - curSymbol])
-                return SECOND;
-        }
+        if (first->start[first->length - curSymbol] > second->start[second->length - curSymbol])
+            return FIRST;
+        else if (second->start[second->length - curSymbol] > first->start[first->length - curSymbol])
+            return SECOND;
     }
 
     if (first->length == second->length)
@@ -225,6 +222,14 @@ void File_dtor(file* fileObject)
     // frees up strings list
     free(fileObject->strings_list);
     fileObject->strings_list = nullptr;
+
+    // Sets FILE* to null
+    fileObject->file_ptr = nullptr;
+
+    // Sets all the non-pointer parameters to 0
+    fileObject->strings_n = 0;
+    fileObject->size_bytes = 0;
+    strcpy(fileObject->path, "");
 }
 
 size_t findPartition(void* start, size_t nElements, size_t elementSize, int (*comparator) (const void*, const void*))
