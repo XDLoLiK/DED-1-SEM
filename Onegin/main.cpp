@@ -2,7 +2,7 @@
  * @file main.cpp
  *
  * @author Stas Goryainov
- * @date 04/09/2021
+ * @date 17/09/2021
  * @version 4.1
  */
 
@@ -35,7 +35,7 @@ int main(int argc, char* argv[])
     writeSortedText(&OneginFile, outputPath, "append");
 
     // Then self written one
-    quickTextSort((void*) OneginFile.strings_list, (size_t) OneginFile.strings_n, sizeof (String), reverseCompareStrings);
+    quickSort((void*) OneginFile.strings_list, (size_t) OneginFile.strings_n, sizeof (String), compareReversedStrings);
     writeSortedText(&OneginFile, outputPath, "append");
 
     // Showing that Pushkin's genius is undebatable

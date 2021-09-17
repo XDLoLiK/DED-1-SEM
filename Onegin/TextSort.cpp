@@ -11,8 +11,8 @@ int File_ctor(File* fileObject)
     assert(fileObject != nullptr);
 
     int scanResult = user_getPath(fileObject);
-
     fileObject->file_ptr = fopen(fileObject->path, "r");
+
     assert(fileObject->file_ptr != nullptr);
 
     // as the last string may not contain the '\n' symbol
@@ -29,7 +29,7 @@ char* File_readText(File* fileObject)
     assert(fileObject != nullptr);
     assert(fileObject->file_ptr != nullptr);
 
-    fileObject->text = (char*) calloc(fileObject->size_bytes,sizeof (char));
+    fileObject->text = (char*) calloc(fileObject->size_bytes, sizeof (char));
     assert(fileObject->text != nullptr);
 
     fread(fileObject->text, sizeof (char), fileObject->size_bytes, fileObject->file_ptr);
@@ -81,14 +81,13 @@ size_t File_setSize(File* fileObject)
     fstat(fileno(fileObject->file_ptr), &fileInfo);
 
     // we need one extra symbol for an extra '\n' (excluding all the '\r' as well)
-    size_t fileSize  = fileInfo.st_size + 2 - fileObject->strings_n;
-    fileObject->size_bytes = fileSize;
+    fileObject->size_bytes =  fileInfo.st_size + 2 - fileObject->strings_n;;
 
     rewind(fileObject->file_ptr);
-    return fileSize;
+    return fileObject->size_bytes;
 }
 
-int user_getPath(file* fileObject)
+int user_getPath(File* fileObject)
 {
     assert(fileObject != nullptr);
 
@@ -101,7 +100,7 @@ int user_getPath(file* fileObject)
     return SCAN_SUCCESS;
 }
 
-void writeSortedText(const file* fileObject, const char* outputPath, const char* mode)
+void writeSortedText(const File* fileObject, const char* outputPath, const char* mode)
 {
     assert(fileObject != nullptr);
     assert(fileObject->strings_list != nullptr);
@@ -122,7 +121,7 @@ void writeSortedText(const file* fileObject, const char* outputPath, const char*
     fclose(outputFile);
 }
 
-void writeSourceText(const file* fileObject, const char* outputPath, const char* mode)
+void writeSourceText(const File* fileObject, const char* outputPath, const char* mode)
 {
     assert(fileObject != nullptr);
     assert(fileObject->text != nullptr);
@@ -191,7 +190,7 @@ int compareStrings(const void* firstString, const void* secondString)
     return (first->length > second->length) ? FIRST : SECOND;
 }
 
-int reverseCompareStrings(const void* firstString, const void* secondString)
+int compareReversedStrings(const void* firstString, const void* secondString)
 {
     assert(firstString != nullptr);
     assert(secondString != nullptr);
@@ -215,7 +214,7 @@ int reverseCompareStrings(const void* firstString, const void* secondString)
     return (first->length > second->length) ? FIRST : SECOND;
 }
 
-void File_dtor(file* fileObject)
+void File_dtor(File* fileObject)
 {
     // frees up file's text
     free(fileObject->text);
@@ -258,14 +257,14 @@ size_t findPartition(void* start, size_t nElements, size_t elementSize, int (*co
     }
 }
 
-void quickTextSort(void* start, size_t nElements, size_t elementSize, int (*comparator) (const void*, const void*))
+void quickSort(void* start, size_t nElements, size_t elementSize, int (*comparator) (const void*, const void*))
 {
     assert(start != nullptr);
     assert(comparator != nullptr);
 
     if (nElements > 1) {
         size_t partition = findPartition(start, nElements, elementSize, comparator);
-        quickTextSort(start, partition, elementSize, comparator);
-        quickTextSort((char*) start + (partition + 1) * elementSize, nElements - partition - 1, elementSize, comparator);
+        quickSort(start, partition, elementSize, comparator);
+        quickSort((char*) start + (partition + 1) * elementSize, nElements - partition - 1, elementSize, comparator);
     }
 }

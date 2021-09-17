@@ -21,9 +21,10 @@ bool user_WantsHelp(int nArgs, char** argsList)
 
 void printHelp()
 {
-    printf("~~Text sorter by Stas Goryainov~~\n\n"
+    printf("\n"
+           "~~Text sorter by Stas Goryainov~~\n\n"
            "~version:        4.1\n"
-           "~last updated:   14/09/2021\n\n"
+           "~last updated:   17/09/2021\n\n"
            "~info:           Sorts the given file in alphabetic order. In particular:\n"
            "                 Firstly, starting from the beginning of each string.\n"
            "                 Then starting from the end of each string.\n"

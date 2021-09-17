@@ -166,7 +166,7 @@ int compareStrings(const void* firstString, const void* secondString);
  * @param[in] secondString pointer to the second string
  * @return a special ComparisonResult value
  */
-int reverseCompareStrings(const void* firstString, const void* secondString);
+int compareReversedStrings(const void* firstString, const void* secondString);
 
 /**
  * Sorts a given data set using the quick sort and a given comparator function
@@ -175,7 +175,7 @@ int reverseCompareStrings(const void* firstString, const void* secondString);
  * @param[in] elementSize the of a single element
  * @param[in] comparator pointer to the comparator function
  */
-void quickTextSort(void* start, size_t nElements, size_t elementSize, int (*comparator) (const void*, const void*));
+void quickSort(void* start, size_t nElements, size_t elementSize, int (*comparator) (const void*, const void*));
 
 /**
  * Finds the partition in which an element divides the data set

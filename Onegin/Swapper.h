@@ -11,41 +11,27 @@
 
 //{------------------------------------------------------------------------------------------------
 /**
- * A "family" of swap n bytes functions
+ * Template for swap_<size> functions
  */
+#define DEF_SWAP(type)                                                           \
+                                                                                 \
+    void swap##_##type (void** firstElem, void** secondElem, size_t* elemSize) { \
+                                                                                 \
+    while (*elemSize >= sizeof (type)) {                                         \
+        type buffer = *((type*) (*firstElem));                                   \
+        *((type*) (*firstElem)) = *((type*) (*secondElem));                      \
+        *((type*) (*secondElem)) = buffer;                                       \
+                                                                                 \
+        *elemSize -= sizeof (type);                                              \
+                                                                                 \
+        *firstElem = (type*) (*firstElem) + 1;                                   \
+        *secondElem = (type*) (*secondElem) + 1;                                 \
+    }                                                                            \
+}
 
-/**
- * Swaps 8 bits of two elements while possible
- * @param[in,out] firstElem pointer to the pointer to the first element
- * @param[in,out] secondElem pointer to the pointer to the second element
- * @param[in,out] elemSize pointer to the size left to swap
- */
-void swap8(void** firstElem, void** secondElem, size_t* elemSize);
+//}------------------------------------------------------------------------------------------------
 
-/**
- * Swaps 16 bits of two elements while possible
- * @param[in,out] firstElem pointer to the pointer to the first element
- * @param[in,out] secondElem pointer to the pointer to the second element
- * @param[in,out] elemSize pointer to the size left to swap
- */
-void swap16(void** firstElem, void** secondElem, size_t* elemSize);
-
-/**
- * Swaps 32 bits of two elements while possible
- * @param[in,out] firstElem pointer to the pointer to the first element
- * @param[in,out] secondElem pointer to the pointer to the second element
- * @param[in,out] elemSize pointer to the size left to swap
- */
-void swap32(void** firstElem, void** secondElem, size_t* elemSize);
-
-/**
- * Swaps 64 bits of two elements while possible
- * @param[in,out] firstElem pointer to the pointer to the first element
- * @param[in,out] secondElem pointer to the pointer to the second element
- * @param[in,out] elemSize pointer to the size left to swap
- */
-void swap64(void** firstElem, void** secondElem, size_t* elemSize);
-
+//{------------------------------------------------------------------------------------------------
 /**
  * Swaps two strings' pointers in the list
  * @param[in,out] firstString pointer to the first element
