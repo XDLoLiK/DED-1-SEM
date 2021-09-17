@@ -6,7 +6,7 @@
 
 #include "Help.h"
 
-bool userWantsHelp(int nArgs, char** argsList)
+bool user_WantsHelp(int nArgs, char** argsList)
 {
     assert(nArgs > 0);
     assert(argsList != nullptr);
@@ -19,7 +19,7 @@ bool userWantsHelp(int nArgs, char** argsList)
     return false;
 }
 
-void getHelp()
+void printHelp()
 {
     printf("~~Text sorter by Stas Goryainov~~\n\n"
            "~version:        4.1\n"
@@ -28,5 +28,5 @@ void getHelp()
            "                 Firstly, starting from the beginning of each string.\n"
            "                 Then starting from the end of each string.\n"
            "                 And then puts both variants consecutively in one file.\n"
-           "                 After all, puts the source text there as well.\n");
+           "                 After all, puts the source text there as well.\n\n");
 }

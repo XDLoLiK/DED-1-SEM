@@ -111,7 +111,7 @@ size_t File_setSize(File* fileObject);
  * @param fileObject pointer to the file "object"
  * @return pointer to the strings list start
  */
-String* setStrings(File* fileObject);
+String* File_setStrings(File* fileObject);
 
 /**
  * Frees up the memory used by file "object"

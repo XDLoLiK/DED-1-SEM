@@ -11,13 +11,13 @@
 
 int main(int argc, char* argv[])
 {
-    if (userWantsHelp(argc, argv))
-        getHelp();
+    if (user_WantsHelp(argc, argv))
+        printHelp();
 
     File OneginFile = {};
 
     if (File_ctor(&OneginFile) == SCAN_FAIL) {
-        printf("Oops.. Something went wrong( Try again\n");
+        printf("ERROR: main(): unable to construct the File object\n");
         return 0;
     }
 
@@ -26,7 +26,7 @@ int main(int argc, char* argv[])
 
     // 256 is the max output file's path length
     if (!scanf("%256s", outputPath)) {
-        printf("Oops.. Something went wrong( Try again\n");
+        printf("ERROR: main(): output path scan fail\n");
         return 0;
     }
 
@@ -42,6 +42,5 @@ int main(int argc, char* argv[])
     writeSourceText(&OneginFile, outputPath, "append");
 
     File_dtor(&OneginFile);
-
     return 0;
 }

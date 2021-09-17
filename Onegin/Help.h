@@ -19,7 +19,7 @@
 /**
  * Prints help info into the console
  */
-void getHelp();
+void printHelp();
 
 /**
  * Finds out if the user needs help
@@ -27,7 +27,7 @@ void getHelp();
  * @param[in] argsList list of command line parameters
  * @return true if there's a "-help" flag, false otherwise
  */
-bool userWantsHelp(int nArgs, char** argsList);
+bool user_WantsHelp(int nArgs, char** argsList);
 //}------------------------------------------------------------------------------------------------
 
 #endif //ONEGIN_HELP_H

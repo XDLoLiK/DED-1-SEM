@@ -11,8 +11,8 @@ int File_ctor(File* fileObject)
     assert(fileObject != nullptr);
 
     int scanResult = user_getPath(fileObject);
-    fileObject->file_ptr = fopen(fileObject->path, "r");
 
+    fileObject->file_ptr = fopen(fileObject->path, "r");
     assert(fileObject->file_ptr != nullptr);
 
     // as the last string may not contain the '\n' symbol
@@ -33,15 +33,15 @@ char* File_readText(File* fileObject)
     assert(fileObject->text != nullptr);
 
     fread(fileObject->text, sizeof (char), fileObject->size_bytes, fileObject->file_ptr);
-
     fileObject->text[fileObject->size_bytes - 1] = '\n';
-    setStrings(fileObject);
+
+    File_setStrings(fileObject);
 
     rewind(fileObject->file_ptr);
     return fileObject->text;
 }
 
-String* setStrings(File* fileObject)
+String* File_setStrings(File* fileObject)
 {
     assert(fileObject != nullptr);
 
@@ -80,7 +80,7 @@ size_t File_setSize(File* fileObject)
     struct stat fileInfo = {};
     fstat(fileno(fileObject->file_ptr), &fileInfo);
 
-    // we need one extra symbol for an extra '\n'
+    // we need one extra symbol for an extra '\n' (excluding all the '\r' as well)
     size_t fileSize  = fileInfo.st_size + 2 - fileObject->strings_n;
     fileObject->size_bytes = fileSize;
 
@@ -90,6 +90,8 @@ size_t File_setSize(File* fileObject)
 
 int user_getPath(file* fileObject)
 {
+    assert(fileObject != nullptr);
+
     printf("Enter the file path (to read): ");
 
     // 256 is the max input file's path length
