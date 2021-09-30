@@ -4,104 +4,156 @@
 
 #include "Stack.h"
 
-bool Stack_push(Stack_t* stackObject, StackElem_t value)
+bool StackPush(Stack_t* stackObject, StackElem_t value)
 {
-    VALIDATE(stackObject, Stack_is_valid, Stack_dump)
+    VALIDATE(stackObject, StackValid, StackDump)
 
-    stackObject->data = (StackElem_t*) realloc(stackObject->data, stackObject->size + 1);
+    if (stackObject->size == stackObject->capacity) {
+
+        if (ReallocSuccess(&stackObject->data, (stackObject->capacity * 2), sizeof (StackElem_t)))
+            stackObject->capacity *= 2;
+        else
+            return false;
+    }
+
     stackObject->size += 1;
     stackObject->data[stackObject->size - 1] = value;
+    stackObject->top = value;
 
-    VALIDATE(stackObject, Stack_is_valid, Stack_dump)
+    stackObject->hash = CalculateHash(stackObject->self, sizeof *stackObject);
+
+    VALIDATE(stackObject, StackValid, StackDump)
 
     return true;
 }
 
-bool Stack_pop(Stack_t* stackObject)
+bool StackPop(Stack_t* stackObject)
 {
-    VALIDATE(stackObject, Stack_is_valid, Stack_dump)
+    VALIDATE(stackObject, StackValid, StackDump)
 
     stackObject->data[stackObject->size - 1] = (StackElem_t) POISON_VALUES::number;
-    stackObject->data = (StackElem_t*) realloc(stackObject->data, stackObject->size - 1);
+
+    if (stackObject->size <= stackObject->capacity / 4) {
+
+        if (ReallocSuccess(&stackObject->data, (stackObject->capacity / 2), sizeof (StackElem_t)))
+            stackObject->capacity /= 2;
+        else
+            return false;
+    }
+
     stackObject->size -= 1;
+    stackObject->top = stackObject->data[stackObject->size - 1];
 
-    VALIDATE(stackObject, Stack_is_valid, Stack_dump)
+    stackObject->hash = CalculateHash(stackObject->self, sizeof *stackObject);
+
+    VALIDATE(stackObject, StackValid, StackDump)
 
     return true;
 }
 
-bool Stack_dump(Stack_t* stackObject, const char* localName)
+void StackDump(Stack_t* stackObject, const char* localName, FILE* destFile)
 {
-    return true;
+
 }
 
-bool Stack_ctor(Stack_t* stackObject, const char* name)
+bool StackCtor(Stack_t* stackObject, const char* name)
 {
     assert(stackObject && name && "Stack object initialization failed");
 
-    stackObject->self = stackObject;
-    stackObject->name = name;
+    // defining attributes
     stackObject->size = 0;
+    stackObject->name = name;
+    stackObject->self = stackObject;
+    stackObject->top = (StackElem_t) POISON_VALUES::number;
 
-    assert(&Stack_push && &Stack_pop && &Stack_dump);
+    if (ReallocSuccess(&stackObject->data, 1, sizeof (StackElem_t)))
+        stackObject->capacity = 1;
+    else
+        return false;
 
-    stackObject->push = &Stack_push;
-    stackObject->pop = &Stack_pop;
-    stackObject->dump = &Stack_dump;
+    // defining methods
+    stackObject->pop  = &StackPop;
+    stackObject->push = &StackPush;
+    stackObject->dump = &StackDump;
+
+    stackObject->hash = CalculateHash(stackObject->self, sizeof *stackObject);
+
+    VALIDATE(stackObject, StackValid, StackDump)
 
     return true;
 }
 
-bool Stack_dtor(Stack_t* stackObject)
+void StackDtor(Stack_t* stackObject)
 {
-    VALIDATE(stackObject, Stack_is_valid, Stack_dump)
+    VALIDATE(stackObject, StackValid, StackDump)
 
     // Poisoning the values
-    for (int elemN = 0; elemN < stackObject->size; ++elemN) {
-        stackObject->data[elemN] = (StackElem_t) POISON_VALUES::number;
+    for (int i = 0; i < stackObject->size; ++i) {
+        stackObject->data[i] = (StackElem_t) POISON_VALUES::number;
     }
 
     // destroying methods
-    stackObject->pop = (bool (*)(stack*)) POISON_VALUES::pointer;
-    stackObject->push = (bool (*)(stack*, StackElem_t)) POISON_VALUES::pointer;
-    stackObject->dump = (bool (*)(stack*, const char*)) POISON_VALUES::pointer;
+    stackObject->pop  = (bool (*)(stack*))                     POISON_VALUES::pointer;
+    stackObject->push = (bool (*)(stack*, StackElem_t))        POISON_VALUES::pointer;
+    stackObject->dump = (void (*)(stack*, const char*, FILE*)) POISON_VALUES::pointer;
 
     //destroying attributes
-    stackObject->name = (char*) POISON_VALUES::pointer;
-    stackObject->data = (StackElem_t*) POISON_VALUES::pointer;
-    stackObject->self = (Stack_t*) POISON_VALUES::pointer;
-    stackObject->size = (size_t) POISON_VALUES::number;
-
-    return true;
+    stackObject->name     = (char*)        POISON_VALUES::pointer;
+    stackObject->data     = (StackElem_t*) POISON_VALUES::pointer;
+    stackObject->self     = (Stack_t*)     POISON_VALUES::pointer;
+    stackObject->size     = (size_t)       POISON_VALUES::number;
+    stackObject->capacity = (size_t)       POISON_VALUES::number;
+    stackObject->top      = (StackElem_t)  POISON_VALUES::number;
 }
 
-bool Stack_new(Stack_t** stackObject_ptr, const char* name)
+bool StackNew(Stack_t** stackObject_ptr, const char* name)
 {
     assert(stackObject_ptr && name && "Stack object initialization failed");
 
     *stackObject_ptr = (Stack_t*) calloc(1, sizeof (Stack_t));
-    Stack_ctor(*stackObject_ptr, name);
+    StackCtor(*stackObject_ptr, name);
 
     return true;
 }
 
-bool Stack_is_valid(Stack_t* stackObject)
+void StackDelete(Stack_t** stackObject_ptr)
 {
-    if (VALIDATION_DEPTH == 1) {
+    assert(stackObject_ptr);
 
-    } else if (VALIDATION_DEPTH == 2) {
-
-    } else if (VALIDATION_DEPTH == 3) {
-
-    }
-
-    return true;
-}
-
-bool Stack_delete(Stack_t** stackObject_ptr)
-{
-    Stack_dtor(*stackObject_ptr);
+    StackDtor(*stackObject_ptr);
     free(*stackObject_ptr);
+}
+
+bool StackValid(Stack_t* stackObject)
+{
+//    bool validator = true;
+//    ...
+//    if (VALIDATION_DEPTH == 1) {
+//
+//        return validator; /????????????????????????????
+//    }
+
+//    if (Validation.depth == 1) {
+//
+//    } else if (Validation.depth == 2) {
+//
+//    } else if (Validation.depth == 3) {
+//
+//    }
+
+    return true;
+}
+
+bool ReallocSuccess(StackElem_t** buffer, size_t nElements, size_t elemSize)
+{
+    assert(buffer);
+
+    void* dataTmp = realloc(*buffer, nElements * elemSize);
+
+    if (dataTmp)
+        *buffer = (StackElem_t*) dataTmp;
+    else
+        return false;
 
     return true;
 }

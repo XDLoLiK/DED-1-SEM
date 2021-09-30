@@ -9,9 +9,10 @@
 
 #define VALIDATE(obj, checkFunc, dumpFunc) {                \
     if (! checkFunc (obj)) {                                \
-        dumpFunc (obj, #obj);                               \
+        dumpFunc (obj, #obj, stdout);                       \
         assert(validationFail);                             \
     }                                                       \
 }
+
 
 #endif // VALIDATE_H

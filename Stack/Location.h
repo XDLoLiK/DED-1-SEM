@@ -16,6 +16,12 @@
         #define __FUNCTION__ __FUNC__
     #elifdef __func__
         #define __FUNCTION__ __func__
+    #elifdef __func_name__
+        #define __FUNCTION__ __func_name__
+    #elifdef __function__
+        #define __FUNCTION__ __function__
+    #elifdef __function_name__
+        #define __FUNCTION__ __function_name__
     #elifdef __PRETTY_FUNCTION__
         #define __FUNCTION__ __PRETTY_FUNCTION__
     #elifdef __FUNCTION_NAME__

@@ -10,14 +10,23 @@ int main(void)
 {
     Stack_t(array);
 
-    array.push(array.self, 1);
-    printf("%lf\n", array.data[array.size - 1]);
+    printf("hash %lld;\n", array.hash);
 
-    array.push(array.self, 6);
-    printf("%lf\n", array.data[array.size - 1]);
+    for (int i = 0; i < 33; ++i) {
+        array.push(array.self, i);
+        printf("size %zd; capacity %zd; value %lf\n", array.size, array.capacity, array.top);
+    }
 
-    array.pop(array.self);
-    printf("%lf\n", array.data[array.size - 1]);
+    printf("\n\n");
+
+    for (int i = 32; i >= 0; --i) {
+        array.pop(array.self);
+        printf("size %zd; capacity %zd; value %lf\n", array.size, array.capacity, array.top);
+    }
+
+    printf("hash %lld;\n", array.hash);
+
+    StackDtor(&array);
 
     return 0;
 }
