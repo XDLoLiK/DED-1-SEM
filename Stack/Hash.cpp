@@ -6,7 +6,7 @@
 
 Hash_t PermutationTable(Hash_t index)
 {
-    assert(index >= 0);
+    assert(index >= 0 && "Invalid Index");
 
     Hash_t maxIndex = 1;
 
@@ -21,7 +21,7 @@ Hash_t PermutationTable(Hash_t index)
 
 Hash_t CalculateHash(void* data, size_t dataSize)
 {
-    assert(data && dataSize >= 0);
+    assert(data && dataSize >= 0 && "Invalid Data");
 
     Hash_t * dataBuffer = nullptr;
     size_t bufferSize = 0;

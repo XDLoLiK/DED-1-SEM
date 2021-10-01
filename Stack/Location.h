@@ -31,6 +31,20 @@
 #endif // __FUNCTION__
 //}------------------------------------------------------------------------------------------------
 
+//{------------------------------------------------------------------------------------------------
+/**
+ * Special type Location_t can be initialized with the __LOCATION__ value
+ * and used to find the current location in the project
+ * Thanks Nikita Zhukov for the idea!
+ */
+
 #define __LOCATION__ {__FILE__, __LINE__, __FUNCTION__}
+
+typedef struct location {
+    const char* file;
+    int line;
+    const char* function;
+} Location_t;
+//}------------------------------------------------------------------------------------------------
 
 #endif // LOCATION_H
