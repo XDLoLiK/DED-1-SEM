@@ -4,61 +4,75 @@
 
 #include "Stack.h"
 
-bool StackPush(Stack_t* stackObject, StackElem_t value)
+/// Deacrese and increase capacity coefficients
+const size_t INCREMENT_COEFF = 2;
+const size_t DECREMENT_COEFF = 2;
+
+/**
+ * Increases stack object's capacity if possible
+ * @param stackObject pointer to the stack object
+ * @return error code (or no error)
+ */
+ERROR_CODE IncreaseCapacity(Stack_t* stackObject);
+
+/**
+ * Decreases stack object's capacity if possible
+ * @param stackObject pointer to the stack object
+ * @return error code (or no error)
+ */
+ERROR_CODE DecreaseCapacity(Stack_t* stackObject);
+
+
+
+//{-----------------------------------------------------STACK-METHODS-------------------------------------------------------------
+ERROR_CODE StackPush(Stack_t* stackObject, StackElem_t value)
 {
-    VALIDATE(stackObject, StackValid, StackDump)
+    VALIDATE(stackObject, StackValid, StackDump);
 
     if (stackObject->size == stackObject->capacity) {
-
-        if (SecureRealloc(&stackObject->data, (stackObject->capacity * 2), sizeof (StackElem_t)))
-            stackObject->capacity *= 2;
-        else
-            return false;
-
-        for (size_t i = stackObject->size; i < stackObject->capacity; ++i) {
-            stackObject->data[i] = (StackElem_t) POISON_VALUES::number;
-        }
+        if (IncreaseCapacity(stackObject->self) != NO_ERROR)
+            RETURN(CAPACITY_INCREMENT_ERROR);
     }
 
-    stackObject->size += 1;
-    stackObject->data[stackObject->size - 1] = value;
-    stackObject->top = value;
+    stackObject->data[stackObject->size++] = value;
 
-    *stackObject->stackHash = CalculateHash(stackObject->self, sizeof *stackObject);
-    *stackObject->dataHash = CalculateHash(stackObject->data, sizeof (StackElem_t) * stackObject->capacity);
+    VALIDATE(stackObject, StackValid, StackDump);
 
-    VALIDATE(stackObject, StackValid, StackDump)
-
-    return true;
+    RETURN(NO_ERROR);
 }
 
-bool StackPop(Stack_t* stackObject)
+ERROR_CODE StackPop(Stack_t* stackObject)
 {
-    VALIDATE(stackObject, StackValid, StackDump)
+    VALIDATE(stackObject, StackValid, StackDump);
 
-    stackObject->data[stackObject->size - 1] = (StackElem_t) POISON_VALUES::number;
+    if (stackObject->size <= 0) {
+        RETURN(EMPTY_STACK_POP_ATTEMPT);
+    }
 
-    if (stackObject->size <= stackObject->capacity / 4) {
+    size_t decrementPoint = stackObject->capacity / 4; // a point when it's time to decrease the capacity
 
-        if (SecureRealloc(&stackObject->data, (stackObject->capacity / 2), sizeof (StackElem_t)))
-            stackObject->capacity /= 2;
-        else
-            return false;
+    if (stackObject->size <= decrementPoint) {
+        if (DecreaseCapacity(stackObject->self) != NO_ERROR)
+            RETURN(CAPACITY_DECREMENT_ERROR);
     }
 
     stackObject->size -= 1;
+    stackObject->data[stackObject->size] = (StackElem_t) POISON_VALUES::NUMBER;
 
-    if (stackObject->size >= 1)
-        stackObject->top = stackObject->data[stackObject->size - 1];
-    else
-        stackObject->top = (StackElem_t) 0;
+    VALIDATE(stackObject, StackValid, StackDump);
 
-    *stackObject->stackHash = CalculateHash(stackObject->self, sizeof *stackObject);
-    *stackObject->dataHash = CalculateHash(stackObject->data, sizeof (StackElem_t) * stackObject->capacity);
+    RETURN(NO_ERROR);
+}
 
-    VALIDATE(stackObject, StackValid, StackDump)
+StackElem_t StackTop(Stack_t* stackObject)
+{
+    VALIDATE(stackObject, StackValid, StackDump);
 
-    return true;
+    if (stackObject->size <= 0) {
+        RETURN(EMPTY_STACK_TOP_ATTEMPT);
+    }
+
+    return stackObject->data[stackObject->size - 1];
 }
 
 void StackDump(Stack_t* stackObject, const char* localName, FILE* destFile, Location_t location)
@@ -70,134 +84,87 @@ void StackDump(Stack_t* stackObject, const char* localName, FILE* destFile, Loca
 
     assert(stackObject && localName && destFile && "Inapropriate pointer");
     assert((char*) stackObject->data > (char*) minPtr && "Inapropriate pointer");
-    assert((char*) stackObject->dataHash > (char*) minPtr && "Inapropriate pointer");
-    assert((char*) stackObject->stackHash > (char*) minPtr && "Inapropriate pointer");
 
-//-------------------------------------STACK-DUMP----------------------------------------------------------------------------------------
-    fprintf(destFile,
-            "stack<uint64_t> [%p] (%s) \"%s\" from %s(%d), %s() \"%s\":\n"
-            "\n"
-            "\tsize_t      capacity    = %-16zd (%s)\n"
-            "\tsize_t      size        = %-16zd (%s)\n"
-            "\tStackElem_t top         = %-16llu (%s)\n"
-            "\tHash_t*     stackHash   = %p (%s)\n"
-            "\tHash_t      *stackHash  = %-16llu (%s)\n"
-            "\tHash_t*     dataHash    = %p (%s)\n"
-            "\tHash_t      *dataHash   = %-16llu (%s)\n"
-            "\tStack_t*    CanaryLeft  = %p (%s)\n"
-            "\tStack_t*    CanaryRight = %p (%s)\n"
-            "\n"
-            "\tdata<StackElem_t> [%p] (%s)\n"
-            "\t{\n",
-
-           stackObject->self, PointerValid(stackObject->self),                          stackObject->name, location.file,
-           location.line, location.function,                                            localName, stackObject->capacity,
-           SizeValid(stackObject->size, stackObject->capacity),                         stackObject->size,
-           SizeValid(stackObject->size, stackObject->capacity),                         stackObject->top,
-           NumberValid(stackObject->top),                                               stackObject->stackHash,
-           PointerValid(stackObject->stackHash),                                        *stackObject->stackHash,
-           HashValid(stackObject->self, sizeof *stackObject, *stackObject->stackHash),  stackObject->dataHash,
-           PointerValid(stackObject->dataHash),                                         *stackObject->dataHash,
-           HashValid(stackObject->data, sizeof (StackElem_t) * stackObject->capacity, *stackObject->dataHash),
-           stackObject->canaryLeft, CanaryValid(stackObject, stackObject->canaryLeft),  stackObject->canaryRight,
-           CanaryValid(stackObject, stackObject->canaryRight),                          stackObject->data, PointerValid(stackObject->data));
-//---------------------------------------------------------------------------------------------------------------------------------------
-
-    // dumping pushed data
-    for (uint64_t i = 0; i < stackObject->size; ++i) {
-        fprintf(destFile, "\t *[%llu] = %-5llu (%s)\n", i, stackObject->data[i], NumberValid(stackObject->data[i]));
-    }
-
-    // dumping poped/unused data
-    for (uint64_t i = stackObject->size; i < stackObject->capacity; ++i) {
-        fprintf(destFile, "\t [%llu] = %-5llu (%s)\n", i, stackObject->data[i], NumberValid(stackObject->data[i]));
-    }
-
-    fprintf(destFile, "\t}\n\n");
+//    int size_status = ...;
+//    printf("%s", size_is_ok ? "da", "net");
 }
 
-bool StackCtor(Stack_t* stackObject, const char* name)
+//}-------------------------------------------------------------------------------------------------------------------------------
+
+ERROR_CODE StackCtor(Stack_t* stackObject, const char* name)
 {
-    assert(stackObject && name && "Stack object initialization failed");
+    if (stackObject == nullptr || name == nullptr)
+        return INITIALIZATION_ERROR;
 
     // defining attributes
     stackObject->size = 0;
-    stackObject->top  = 0;
     stackObject->name = name;
     stackObject->self = stackObject;
 
-    if (SecureRealloc(&stackObject->data, 1, sizeof (StackElem_t)))
+    if (SecureRealloc(&stackObject->data, 1, sizeof (StackElem_t)) == NO_ERROR)
         stackObject->capacity = 1;
     else
-        return false;
+        return ALLOCATION_ERROR;
 
     stackObject->data[0] = 0;
 
+    // setting up the canaries
     stackObject->canaryLeft  = stackObject->self;
     stackObject->canaryRight = stackObject->self;
 
+    assert(&StackPop && &StackPush && &StackDump && &StackTop && "Invalid function pointer");
+
     // defining methods
     stackObject->pop  = &StackPop;
+    stackObject->top  = &StackTop;
     stackObject->push = &StackPush;
     stackObject->dump = &StackDump;
 
     // calculatig struct hash
-    if (SecureRealloc(&stackObject->stackHash, 1, sizeof (Hash_t)) &&
-        SecureRealloc(&stackObject->dataHash, 1, sizeof (Hash_t))) {
-        *stackObject->stackHash = CalculateHash(stackObject->self, sizeof *stackObject);
-        *stackObject->stackHash = CalculateHash(stackObject->data, sizeof (StackElem_t) * stackObject->capacity);
-    }
-    else
-        return false;
+    //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-    VALIDATE(stackObject, StackValid, StackDump)
+    VALIDATE(stackObject, StackValid, StackDump);
 
-    return true;
+    RETURN(NO_ERROR);
 }
 
 void StackDtor(Stack_t* stackObject)
 {
-    VALIDATE(stackObject, StackValid, StackDump)
+    VALIDATE(stackObject, StackValid, StackDump);
 
     // Poisoning the values
     for (int i = 0; i < stackObject->size; ++i) {
-        stackObject->data[i] = (StackElem_t) POISON_VALUES::number;
+        stackObject->data[i] = (StackElem_t) POISON_VALUES::NUMBER;
     }
 
-    *stackObject->dataHash  = (Hash_t) POISON_VALUES::number;
-    *stackObject->stackHash = (Hash_t) POISON_VALUES::number;
+    stackObject->hash  = (Hash_t) POISON_VALUES::NUMBER;
 
     // freeing allocated memory
     free(stackObject->data);
-    free(stackObject->dataHash);
-    free(stackObject->stackHash);
 
     // destroying methods
-    stackObject->pop  = (bool (*)(stack*))                                 POISON_VALUES::pointer;
-    stackObject->push = (bool (*)(stack*, StackElem_t))                    POISON_VALUES::pointer;
-    stackObject->dump = (void (*)(stack*, const char*, FILE*, Location_t)) POISON_VALUES::pointer;
+    stackObject->top  = (StackElem_t (*)(stack*))                                 POISON_VALUES::POINTER;
+    stackObject->pop  = (ERROR_CODE  (*)(stack*))                                 POISON_VALUES::POINTER;
+    stackObject->push = (ERROR_CODE  (*)(stack*, StackElem_t))                    POISON_VALUES::POINTER;
+    stackObject->dump = (void        (*)(stack*, const char*, FILE*, Location_t)) POISON_VALUES::POINTER;
 
     //destroying attributes
-    stackObject->name        = (char*)        POISON_VALUES::pointer;
-    stackObject->data        = (StackElem_t*) POISON_VALUES::pointer;
-    stackObject->stackHash   = (Hash_t*)      POISON_VALUES::pointer;
-    stackObject->dataHash    = (Hash_t*)      POISON_VALUES::pointer;
-    stackObject->self        = (Stack_t*)     POISON_VALUES::pointer;
-    stackObject->canaryLeft  = (Stack_t*)     POISON_VALUES::pointer;
-    stackObject->canaryRight = (Stack_t*)     POISON_VALUES::pointer;
-    stackObject->size        = (size_t)       POISON_VALUES::number;
-    stackObject->capacity    = (size_t)       POISON_VALUES::number;
-    stackObject->top         = (StackElem_t)  POISON_VALUES::number;
+    stackObject->name        = (char*)        POISON_VALUES::POINTER;
+    stackObject->data        = (StackElem_t*) POISON_VALUES::POINTER;
+    stackObject->self        = (Stack_t*)     POISON_VALUES::POINTER;
+    stackObject->canaryLeft  = (Stack_t*)     POISON_VALUES::POINTER;
+    stackObject->canaryRight = (Stack_t*)     POISON_VALUES::POINTER;
+    stackObject->size        = (size_t)       POISON_VALUES::NUMBER;
+    stackObject->capacity    = (size_t)       POISON_VALUES::NUMBER;
 }
 
-bool StackNew(Stack_t** stackObject_ptr, const char* name)
+ERROR_CODE StackNew(Stack_t** stackObject_ptr, const char* name)
 {
     assert(stackObject_ptr && name && "Stack object initialization failed");
 
     *stackObject_ptr = (Stack_t*) calloc(1, sizeof (Stack_t));
-    StackCtor(*stackObject_ptr, name);
 
-    return true;
+    return StackCtor(*stackObject_ptr, name);
 }
 
 void StackDelete(Stack_t** stackObject_ptr)
@@ -212,41 +179,21 @@ bool StackValid(Stack_t* stackObject)
 {
     assert(stackObject && "Inapropriate pointer");
 
-    bool validator = true;
+    if (VALIDATION_DEPTH >= 1) {
 
-    if (VALIDATION_DEPTH >= 1)
-        validator = (strcmp(SizeValid(stackObject->size, stackObject->capacity), "ok") == 0  &&
-                     IS_OK(Pointer, (void*) stackObject->data)       &&
-                     IS_OK(Pointer, (void*) stackObject->self)       &&
-                     IS_OK(Pointer, (void*) stackObject->pop)        &&
-                     IS_OK(Pointer, (void*) stackObject->push)       &&
-                     IS_OK(Pointer, (void*) stackObject->dump)       &&
-                     IS_OK(Pointer, (void*) stackObject->name)       &&
-                     IS_OK(Pointer, (void*) stackObject->stackHash)  &&
-                     IS_OK(Number,  stackObject->top));
-
-    if (!validator) return false;
-
-    if (VALIDATION_DEPTH >= 2) {
-        validator = (strcmp(CanaryValid(stackObject->self, stackObject->canaryLeft),  "ok") == 0 &&
-                     strcmp(CanaryValid(stackObject->self, stackObject->canaryRight), "ok") == 0);
     }
 
-    if (!validator) return false;
+    if (VALIDATION_DEPTH >= 2) {
+    }
 
     if (VALIDATION_DEPTH >= 3) {
 
-        for (int i = 0; i < stackObject->size; ++i) {
-            validator = validator && IS_OK(Number, stackObject->data[i]);
-        }
-
-        validator = strcmp(HashValid(stackObject, sizeof *stackObject, *stackObject->stackHash), "ok") == 0;
     }
 
-    return validator;
+    return true;
 }
 
-bool SecureRealloc(StackElem_t** buffer, size_t nElements, size_t elemSize)
+ERROR_CODE SecureRealloc(StackElem_t** buffer, size_t nElements, size_t elemSize)
 {
     assert(buffer && "Inapropriate pointer");
 
@@ -255,53 +202,84 @@ bool SecureRealloc(StackElem_t** buffer, size_t nElements, size_t elemSize)
     if (dataTmp)
         *buffer = (StackElem_t*) dataTmp;
     else
-        return false;
+        return ALLOCATION_ERROR;
 
-    return true;
+    return NO_ERROR;
 }
 
-const char* NumberValid(StackElem_t value)
+ERROR_CODE NumberValid(StackElem_t value)
 {
-    if (value == (StackElem_t) POISON_VALUES::number)
-        return "POISON!";
+    if (value == (StackElem_t) POISON_VALUES::NUMBER)
+        return POISON_NUMBER;
 
-    return "ok";
+    return NO_ERROR;
 }
 
-const char* SizeValid(size_t size, size_t capacity)
+ERROR_CODE SizeValid(size_t size, size_t capacity)
 {
-    if (size > capacity || size < 0 || capacity < 0)
-        return "ERROR!";
+    if (size > capacity)
+        return CAPACITY_ERROR;
 
-    return "ok";
+    return NO_ERROR;
 }
 
-const char* PointerValid(void* pointer)
+ERROR_CODE PointerValid(void* pointer)
 {
     if (pointer == nullptr)
-        return "ERROR!";
-    else if (pointer == (void*) POISON_VALUES::pointer)
-        return "POISON!";
+        return POINTER_IS_NULL;
+    else if (pointer == (void*) POISON_VALUES::POINTER)
+        return POISON_POINTER;
 
-    return "ok";
+    return NO_ERROR;
 }
 
-const char* HashValid(void* data, size_t dataSize, Hash_t hash)
+ERROR_CODE HashValid(void* data, size_t dataSize, Hash_t hash)
 {
     assert(data && "Inapropriate pointer");
 
     if (CalculateHash(data, dataSize) != hash)
-        return "ERROR!";
+        return INVALID_HASH;
 
-    return "ok";
+    return NO_ERROR;
 }
 
-const char* CanaryValid(Stack_t* stackObject, Stack_t* canary)
+ERROR_CODE CanaryValid(Stack_t* stackObject, Stack_t* canary)
 {
     assert(canary && stackObject && "Inapropriate pointer");
 
     if (stackObject->self != canary)
-        return "ERROR!";
+        return CANARY_ACCESSED;
 
-    return "ok";
+    return NO_ERROR;
+}
+
+ERROR_CODE IncreaseCapacity(Stack_t* stackObject)
+{
+    assert(stackObject  && "Invalid pointer to the stack object");
+
+    if (SecureRealloc(&stackObject->data, stackObject->capacity * INCREMENT_COEFF, sizeof (StackElem_t)) == NO_ERROR)
+        stackObject->capacity *= INCREMENT_COEFF;
+    else {
+        RETURN(ALLOCATION_ERROR);
+    }
+
+    for (size_t i = stackObject->size; i < stackObject->capacity; ++i) {
+        stackObject->data[i] = (StackElem_t) POISON_VALUES::NUMBER;
+    }
+
+    RETURN(NO_ERROR);
+}
+
+ERROR_CODE DecreaseCapacity(Stack_t* stackObject)
+{
+    assert(stackObject  && "Invalid pointer to the stack object");
+
+    if (SecureRealloc(&stackObject->data, (stackObject->capacity / DECREMENT_COEFF), sizeof (StackElem_t)) == NO_ERROR) {
+        stackObject->capacity /= DECREMENT_COEFF;
+    }
+    else {
+        RETURN(ALLOCATION_ERROR);
+    }
+
+    RETURN(NO_ERROR);
 }
