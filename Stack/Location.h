@@ -5,10 +5,7 @@
 #ifndef LOCATION_H
 #define LOCATION_H
 
-//{------------------------------------------------------------------------------------------------
-/**
- * Defining standard function name macros
- */
+//{-------------------------------------Standard-function-macros-name------------------------------
 
 #ifndef __FUNCTION__
 
@@ -31,19 +28,21 @@
 #endif // __FUNCTION__
 //}------------------------------------------------------------------------------------------------
 
-//{------------------------------------------------------------------------------------------------
+
+//{-----------------------------------Thanks-Nikita-Zhukov-for-the-idea!---------------------------
 /**
- * Special type Location_t can be initialized with the __LOCATION__ value
- * and used to find the current location in the project
- * Thanks Nikita Zhukov for the idea!
+ * Special type Location_t can be initialized with the __LOCATION__ 
+ * value and used to find the current location in the project
  */
 
-#define __LOCATION__ {__FILE__, __LINE__, __FUNCTION__}
+#define __LOCATION__ {__FILE__, __FUNCTION__, __LINE__}
 
 typedef struct location {
+
     const char* file;
-    int line;
     const char* function;
+    int line;
+
 } Location_t;
 //}------------------------------------------------------------------------------------------------
 

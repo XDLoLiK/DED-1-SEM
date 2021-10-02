@@ -10,6 +10,8 @@ Hash_t PermutationTable(Hash_t index)
 
     Hash_t maxIndex = 1;
 
+    /// Max Hash_t value size is 2^64 - 1 which 
+    /// is also 2^63 - 1 + 2^63 (to avoid overflow)
     for (int i = 0; i < 62; ++i) {
         maxIndex *= 2;
     }
@@ -26,11 +28,13 @@ Hash_t CalculateHash(void* data, size_t dataSize)
     Hash_t * dataBuffer = nullptr;
     size_t bufferSize = 0;
 
+    /// Extending the data size to the minimal data size
     if (dataSize < sizeof (Hash_t))
         bufferSize = sizeof (Hash_t) * 2;
     else if (dataSize >= sizeof (Hash_t))
         bufferSize = (sizeof (Hash_t) - dataSize % sizeof (Hash_t)) % sizeof (Hash_t) + dataSize;
 
+    /// Creating a buffer for the data to not spoil it
     dataBuffer = (Hash_t*) calloc(1, bufferSize);
     memcpy(dataBuffer, data, bufferSize);
 

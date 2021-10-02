@@ -5,6 +5,7 @@
 #ifndef STACK_STACK_H
 #define STACK_STACK_H
 
+/// Standard libs
 #include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
@@ -12,9 +13,12 @@
 #include <inttypes.h>
 #include <string.h>
 
+/// Self-written libs
 #include "Location.h"
 #include "Validate.h"
+#include "Errors.h"
 #include "Hash.h"
+
 
 #define VALIDATION_ACTIVE
 
@@ -22,32 +26,30 @@
     #define VALIDATION_DEPTH HARD
 #endif
 
-//{------------------------------------------------------------------------------------------------
-/**
- * Stack_t init macroses
- */
+//{--------------------------------Stack_t-init-macroses-------------------------------------------
 
-#define Stack_t(name)                        \
-Stack_t name = {};                           \
-if (StackCtor(&name, #name) != NO_ERROR)     \
-    assert(0 && "Stack construction failed")     //!!!!!!!!!!~~~~~~~
+#define Stack_t(name)                           \
+                                                \
+Stack_t name = {};                              \
+if (StackCtor(&name, #name) != NO_ERROR)        \
+    assert(0 && "Stack construction failed")    
 
-#define new_Stack_t(name)        \
-Stack_t* name = nullptr;         \
-if (!StackNew(&name, #name))     \
-    assert(0)
+#define new_Stack_t(name)                       \
+                                                \
+Stack_t* name = nullptr;                        \
+if (StackNew(&name, #name) != NO_ERROR)         \
+    assert(0 && "Stack construction failed")    
 
 
-#define delete_Stack_t(name)     \
-if (!StackNew(&name, #name))     \
-    assert(0)
+#define delete_Stack_t(name)                    \
+                                                \
+if (StackNew(&name, #name) != NO_ERROR)         \
+    assert(0 && "Stack construction failed")    
 
 //}------------------------------------------------------------------------------------------------
 
-//{------------------------------------------------------------------------------------------------
-/**
- * Validation depth levels
- */
+
+//{--------------------------------Validation-levels-----------------------------------------------
 
 enum ValidationDepth {
     NO_VALIDATION = 0, /// does no validation
@@ -57,60 +59,17 @@ enum ValidationDepth {
 };
 //}------------------------------------------------------------------------------------------------
 
-#define ERROR_LOG(ErrorName) {                                                          \
-    Location_t location = __LOCATION__;                                                 \
-                                                                                        \
-    if ((ErrorName) != NO_ERROR) {                                                      \
-        printf("=================================================================\n");  \
-        printf(">>> ERROR OCCURRED!\n");                                                \
-        printf(">>> REASON:   %s\n", #ErrorName);                                       \
-        printf(">>> FILE:     %s\n", location.file);                                    \
-        printf(">>> FUNCTION: %s\n", location.function);                                \
-        printf(">>> LINE:     %d\n", location.line);                                    \
-        printf("=================================================================\n");  \
-    }                                                                                   \
-}                                                                                       \
-                                                                                        \
-do {                                                                                    \
-                                                                                        \
-} while(0)
 
-#define RETURN(ErrorName)                   \
-    ERROR_LOG(ErrorName);                   \
-    return ErrorName
-
-enum ERROR_CODE {
-    NO_ERROR                    = 0,
-    INVALID_HASH                = 1,
-    POISON_NUMBER               = 2,
-    CAPACITY_ERROR              = 3,
-    POINTER_IS_NULL             = 4,
-    CANARY_ACCESSED             = 5,
-    ALLOCATION_ERROR            = 6,
-    POISON_POINTER              = 7,
-    INITIALIZATION_ERROR        = 8,
-    CAPACITY_DECREMENT_ERROR    = 9,
-    CAPACITY_INCREMENT_ERROR    = 10,
-    EMPTY_STACK_POP_ATTEMPT     = 11,
-    EMPTY_STACK_TOP_ATTEMPT     = 12
-};
-
-//{------------------------------------------------------------------------------------------------
-/**
- * Poison values
- * (to poison the freed data)
- */
+//{--------------------------------Poison-values---------------------------------------------------
 
 enum class POISON_VALUES {
-    POINTER = 666,       /// Pointer poison value
-    NUMBER  = 0xDEADBEE, /// Hex poison number value
+    POINTER = 666,              /// Pointer poison value
+    NUMBER  = 0xDEADBEE,        /// Hex number poison value
 };
 //}------------------------------------------------------------------------------------------------
 
-//{------------------------------------------------------------------------------------------------
-/**
- * Stack_t "class"
- */
+
+//{--------------------------------Stack_t-"class"-------------------------------------------------
 
 typedef uint64_t StackElem_t;
 
@@ -129,7 +88,6 @@ typedef struct stack {
     StackElem_t* data = nullptr;
 
 // methods
-
     StackElem_t (*top)  (stack* self)                                                = nullptr;
     ERROR_CODE  (*pop)  (stack* self)                                                = nullptr;
     ERROR_CODE  (*push) (stack* self, StackElem_t value)                             = nullptr;
@@ -146,10 +104,8 @@ typedef struct stack {
 } Stack_t;
 //}------------------------------------------------------------------------------------------------
 
-//{------------------------------------------------------------------------------------------------
-/**
- * Stack methods
- */
+
+//{--------------------------------Stack-methods---------------------------------------------------
 
 /**
  * Removes the last element put into stack
@@ -183,10 +139,8 @@ void StackDump(Stack_t* stackObject, const char* localName, FILE* destFile, Loca
 StackElem_t StackTop(Stack_t* stackObject);
 //}------------------------------------------------------------------------------------------------
 
-//{------------------------------------------------------------------------------------------------
-/**
- * Stack constructors and destructors
- */
+
+//{------------------------Stack-constructors-and-destructors--------------------------------------
 
 /**
  * Initializes stack data on the static memory
@@ -217,7 +171,8 @@ ERROR_CODE StackNew(Stack_t** stackObject, const char* name);
 void StackDelete(Stack_t** stackObject_ptr);
 //}------------------------------------------------------------------------------------------------
 
-//{------------------------------------------------------------------------------------------------
+
+//{------------------------Validation-related-functions--------------------------------------------
 /**
  * Data protection related functions
  */

@@ -8,6 +8,12 @@
 const size_t INCREMENT_COEFF = 2;
 const size_t DECREMENT_COEFF = 2;
 
+//{--------------------------------------------------------Capacity-change-functions-------------------------------------------------------
+
+/**
+ * The user shall not have access to these
+ */
+
 /**
  * Increases stack object's capacity if possible
  * @param stackObject pointer to the stack object
@@ -21,13 +27,21 @@ ERROR_CODE IncreaseCapacity(Stack_t* stackObject);
  * @return error code (or no error)
  */
 ERROR_CODE DecreaseCapacity(Stack_t* stackObject);
+//}----------------------------------------------------------------------------------------------------------------------------------------
 
 
 
-//{-----------------------------------------------------STACK-METHODS-------------------------------------------------------------
-ERROR_CODE StackPush(Stack_t* stackObject, StackElem_t value)
+//{--------------------------------------------------------STACK-METHODS-------------------------------------------------------------------
+
+ERROR_CODE StackPush(Stack_t* stackObject, StackElem_t value) 
 {
+
+#if defined(VALIDATION_ACTIVE)
+
     VALIDATE(stackObject, StackValid, StackDump);
+
+#endif // VALIDATION_ACTIVE
+
 
     if (stackObject->size == stackObject->capacity) {
         if (IncreaseCapacity(stackObject->self) != NO_ERROR)
@@ -36,37 +50,63 @@ ERROR_CODE StackPush(Stack_t* stackObject, StackElem_t value)
 
     stackObject->data[stackObject->size++] = value;
 
+
+#if defined(VALIDATION_ACTIVE)
+
     VALIDATE(stackObject, StackValid, StackDump);
+
+#endif // VALIDATION_ACTIVE
+
 
     RETURN(NO_ERROR);
 }
 
+
 ERROR_CODE StackPop(Stack_t* stackObject)
 {
+
+#if defined(VALIDATION_ACTIVE)
+
     VALIDATE(stackObject, StackValid, StackDump);
+
+#endif // VALIDATION_ACTIVE
+
 
     if (stackObject->size <= 0) {
         RETURN(EMPTY_STACK_POP_ATTEMPT);
     }
 
-    size_t decrementPoint = stackObject->capacity / 4; // a point when it's time to decrease the capacity
+    // a point when it's time to decrease the capacity
+    size_t decrementPoint = stackObject->capacity / 4;
 
     if (stackObject->size <= decrementPoint) {
         if (DecreaseCapacity(stackObject->self) != NO_ERROR)
             RETURN(CAPACITY_DECREMENT_ERROR);
     }
 
-    stackObject->size -= 1;
-    stackObject->data[stackObject->size] = (StackElem_t) POISON_VALUES::NUMBER;
+    stackObject->data[--stackObject->size] = (StackElem_t) POISON_VALUES::NUMBER;
+
+
+#if defined(VALIDATION_ACTIVE)
 
     VALIDATE(stackObject, StackValid, StackDump);
+
+#endif // VALIDATION_ACTIVE
+
 
     RETURN(NO_ERROR);
 }
 
+
 StackElem_t StackTop(Stack_t* stackObject)
 {
+
+#if defined(VALIDATION_ACTIVE)
+
     VALIDATE(stackObject, StackValid, StackDump);
+
+#endif // VALIDATION_ACTIVE
+
 
     if (stackObject->size <= 0) {
         RETURN(EMPTY_STACK_TOP_ATTEMPT);
@@ -74,6 +114,7 @@ StackElem_t StackTop(Stack_t* stackObject)
 
     return stackObject->data[stackObject->size - 1];
 }
+
 
 void StackDump(Stack_t* stackObject, const char* localName, FILE* destFile, Location_t location)
 {
@@ -90,6 +131,7 @@ void StackDump(Stack_t* stackObject, const char* localName, FILE* destFile, Loca
 }
 
 //}-------------------------------------------------------------------------------------------------------------------------------
+
 
 ERROR_CODE StackCtor(Stack_t* stackObject, const char* name)
 {
@@ -109,8 +151,6 @@ ERROR_CODE StackCtor(Stack_t* stackObject, const char* name)
     stackObject->data[0] = 0;
 
     // setting up the canaries
-    stackObject->canaryLeft  = stackObject->self;
-    stackObject->canaryRight = stackObject->self;
 
     assert(&StackPop && &StackPush && &StackDump && &StackTop && "Invalid function pointer");
 
@@ -120,43 +160,58 @@ ERROR_CODE StackCtor(Stack_t* stackObject, const char* name)
     stackObject->push = &StackPush;
     stackObject->dump = &StackDump;
 
-    // calculatig struct hash
-    //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+#if defined(VALIDATION_ACTIVE)
+
+    // calculatig struct hash !!!!!!!!!!!!
+
+    stackObject->canaryLeft  = stackObject->self;
+    stackObject->canaryRight = stackObject->self;
 
     VALIDATE(stackObject, StackValid, StackDump);
+
+#endif // VALIDATION_ACTIVE
+
 
     RETURN(NO_ERROR);
 }
 
 void StackDtor(Stack_t* stackObject)
 {
+
+#if defined(VALIDATION_ACTIVE)
+
     VALIDATE(stackObject, StackValid, StackDump);
+
+    stackObject->canaryLeft  = (Stack_t*)  POISON_VALUES::POINTER;
+    stackObject->canaryRight = (Stack_t*)  POISON_VALUES::POINTER;
+    stackObject->hash        = (Hash_t)    POISON_VALUES::NUMBER;
+
+#endif // VALIDATION_ACTIVE
+
 
     // Poisoning the values
     for (int i = 0; i < stackObject->size; ++i) {
         stackObject->data[i] = (StackElem_t) POISON_VALUES::NUMBER;
     }
 
-    stackObject->hash  = (Hash_t) POISON_VALUES::NUMBER;
-
     // freeing allocated memory
     free(stackObject->data);
-
-    // destroying methods
-    stackObject->top  = (StackElem_t (*)(stack*))                                 POISON_VALUES::POINTER;
-    stackObject->pop  = (ERROR_CODE  (*)(stack*))                                 POISON_VALUES::POINTER;
-    stackObject->push = (ERROR_CODE  (*)(stack*, StackElem_t))                    POISON_VALUES::POINTER;
-    stackObject->dump = (void        (*)(stack*, const char*, FILE*, Location_t)) POISON_VALUES::POINTER;
 
     //destroying attributes
     stackObject->name        = (char*)        POISON_VALUES::POINTER;
     stackObject->data        = (StackElem_t*) POISON_VALUES::POINTER;
     stackObject->self        = (Stack_t*)     POISON_VALUES::POINTER;
-    stackObject->canaryLeft  = (Stack_t*)     POISON_VALUES::POINTER;
-    stackObject->canaryRight = (Stack_t*)     POISON_VALUES::POINTER;
     stackObject->size        = (size_t)       POISON_VALUES::NUMBER;
     stackObject->capacity    = (size_t)       POISON_VALUES::NUMBER;
+
+    // destroying methods
+    stackObject->top  = (StackElem_t (*)(stack*))                          POISON_VALUES::POINTER;
+    stackObject->pop  = (ERROR_CODE (*)(stack*))                           POISON_VALUES::POINTER;
+    stackObject->push = (ERROR_CODE (*)(stack*, StackElem_t))              POISON_VALUES::POINTER;
+    stackObject->dump = (void (*)(stack*, const char*, FILE*, Location_t)) POISON_VALUES::POINTER;
 }
+
 
 ERROR_CODE StackNew(Stack_t** stackObject_ptr, const char* name)
 {
@@ -167,6 +222,7 @@ ERROR_CODE StackNew(Stack_t** stackObject_ptr, const char* name)
     return StackCtor(*stackObject_ptr, name);
 }
 
+
 void StackDelete(Stack_t** stackObject_ptr)
 {
     assert(stackObject_ptr && "Inapropriate pointer");
@@ -174,6 +230,7 @@ void StackDelete(Stack_t** stackObject_ptr)
     StackDtor(*stackObject_ptr);
     free(*stackObject_ptr);
 }
+
 
 bool StackValid(Stack_t* stackObject)
 {
@@ -193,6 +250,7 @@ bool StackValid(Stack_t* stackObject)
     return true;
 }
 
+
 ERROR_CODE SecureRealloc(StackElem_t** buffer, size_t nElements, size_t elemSize)
 {
     assert(buffer && "Inapropriate pointer");
@@ -207,6 +265,7 @@ ERROR_CODE SecureRealloc(StackElem_t** buffer, size_t nElements, size_t elemSize
     return NO_ERROR;
 }
 
+
 ERROR_CODE NumberValid(StackElem_t value)
 {
     if (value == (StackElem_t) POISON_VALUES::NUMBER)
@@ -215,6 +274,7 @@ ERROR_CODE NumberValid(StackElem_t value)
     return NO_ERROR;
 }
 
+
 ERROR_CODE SizeValid(size_t size, size_t capacity)
 {
     if (size > capacity)
@@ -222,6 +282,7 @@ ERROR_CODE SizeValid(size_t size, size_t capacity)
 
     return NO_ERROR;
 }
+
 
 ERROR_CODE PointerValid(void* pointer)
 {
@@ -233,6 +294,7 @@ ERROR_CODE PointerValid(void* pointer)
     return NO_ERROR;
 }
 
+
 ERROR_CODE HashValid(void* data, size_t dataSize, Hash_t hash)
 {
     assert(data && "Inapropriate pointer");
@@ -243,6 +305,7 @@ ERROR_CODE HashValid(void* data, size_t dataSize, Hash_t hash)
     return NO_ERROR;
 }
 
+
 ERROR_CODE CanaryValid(Stack_t* stackObject, Stack_t* canary)
 {
     assert(canary && stackObject && "Inapropriate pointer");
@@ -252,6 +315,7 @@ ERROR_CODE CanaryValid(Stack_t* stackObject, Stack_t* canary)
 
     return NO_ERROR;
 }
+
 
 ERROR_CODE IncreaseCapacity(Stack_t* stackObject)
 {
@@ -269,6 +333,7 @@ ERROR_CODE IncreaseCapacity(Stack_t* stackObject)
 
     RETURN(NO_ERROR);
 }
+
 
 ERROR_CODE DecreaseCapacity(Stack_t* stackObject)
 {
