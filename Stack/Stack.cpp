@@ -51,6 +51,8 @@ Hash_t GetHash(Stack_t* stackObject);                                           
                                                                                                                                          //
 ERROR_CODE StackPush(Stack_t* stackObject, StackElem_t value)                                                                            //
 {                                                                                                                                        //
+    assert(stackObject != (Stack_t*)    POISON_VALUES::POINTER && stackObject && "Inapropriate stack object pointer");                   //                                          
+                                                                                                                                         //
 #if defined(VALIDATION_ACTIVE)                                                                                                           //
                                                                                                                                          //
     VALIDATE(stackObject, StackValid, StackDump);                                                                                        //
@@ -75,7 +77,9 @@ ERROR_CODE StackPush(Stack_t* stackObject, StackElem_t value)                   
                                                                                                                                          //
                                                                                                                                          //
 ERROR_CODE StackPop(Stack_t* stackObject)                                                                                                //
-{                                                                                                                                        //                                                                                                                                                                                                                                                                               //
+{                                                                                                                                        //
+    assert(stackObject != (Stack_t*)    POISON_VALUES::POINTER && stackObject && "Inapropriate stack object pointer");                   //                                          
+                                                                                                                                         //                                                                                                                                                                                                                                                                               
 #if defined(VALIDATION_ACTIVE)                                                                                                           //
                                                                                                                                          //
     VALIDATE(stackObject, StackValid, StackDump);                                                                                        //
@@ -104,6 +108,8 @@ ERROR_CODE StackPop(Stack_t* stackObject)                                       
                                                                                                                                          //
 StackElem_t StackTop(Stack_t* stackObject)                                                                                               //
 {                                                                                                                                        //
+    assert(stackObject != (Stack_t*)    POISON_VALUES::POINTER && stackObject && "Inapropriate stack object pointer");                   //                                          
+                                                                                                                                         //
 #if defined(VALIDATION_ACTIVE)                                                                                                           //
                                                                                                                                          //
     VALIDATE(stackObject, StackValid, StackDump);                                                                                        //
@@ -121,7 +127,9 @@ StackElem_t StackTop(Stack_t* stackObject)                                      
                                                                                                                                          //
 void StackDump(Stack_t* stackObject, const char* localName, FILE* destFile, Location_t location)                                         //
 {                                                                                                                                        //
-    assert(stackObject && localName && destFile && "Inapropriate pointer");                                                              //
+    assert(stackObject != (Stack_t*)    POISON_VALUES::POINTER && stackObject && "Inapropriate stack object pointer");                   //                                          
+    assert(destFile    != (FILE*)       POISON_VALUES::POINTER && destFile    && "Inapropriate stack object pointer");                   //
+    assert(localName   != (const char*) POISON_VALUES::POINTER && localName   && "Inapropriate stack object pointer");                   //
                                                                                                                                          //
     // dumping struct info and status                                                                                                    //
     const char* stackStatus = (StackValid(stackObject->self)) ? "ok" : "ERROR!";                                                         //
@@ -194,6 +202,9 @@ void StackDump(Stack_t* stackObject, const char* localName, FILE* destFile, Loca
                                                                                                                                          //
 ERROR_CODE StackCtor(Stack_t* stackObject, const char* name)                                                                             //
 {                                                                                                                                        //
+    assert(stackObject && stackObject != (Stack_t*) POISON_VALUES::POINTER && "Invalid stack object pointer");                           //
+    assert(name && name != (const char*) POISON_VALUES::POINTER && "Invalid  name pointer");                                             //
+                                                                                                                                         //
     if (stackObject == nullptr || name == nullptr)                                                                                       //
         RETURN(INITIALIZATION_ERROR);                                                                                                    //
                                                                                                                                          //
@@ -237,6 +248,8 @@ ERROR_CODE StackCtor(Stack_t* stackObject, const char* name)                    
                                                                                                                                          //
 Hash_t GetHash(Stack_t* stackObject)                                                                                                     //
 {                                                                                                                                        //
+    assert(stackObject && stackObject != (Stack_t*) POISON_VALUES::POINTER && "Invalid stack object pointer");                           //
+                                                                                                                                         //
     Hash_t oldHash    = stackObject->hash;                                                                                               //
     stackObject->hash = NEUTRAL_HASH;                                                                                                    //
                                                                                                                                          //
@@ -370,7 +383,7 @@ ERROR_CODE PointerValid(void* pointer)                                          
                                                                                                                                          //
 ERROR_CODE HashValid(Stack_t* stackObject)                                                                                               //
 {                                                                                                                                        //
-    assert(stackObject && "Inapropriate pointer");                                                                                       //
+    assert(stackObject != (Stack_t*)    POISON_VALUES::POINTER && stackObject && "Inapropriate stack object pointer");                   //                                          
                                                                                                                                          //
     Hash_t oldHash     = stackObject->hash;                                                                                              //
     stackObject->hash  = NEUTRAL_HASH;                                                                                                   //
@@ -386,7 +399,8 @@ ERROR_CODE HashValid(Stack_t* stackObject)                                      
                                                                                                                                          //
 ERROR_CODE CanaryValid(Stack_t* stackObject, Stack_t* canary)                                                                            //
 {                                                                                                                                        //
-    assert(canary && stackObject && "Inapropriate pointer");                                                                             //
+    assert(canary && "Inapropriate canary pointer");                                                                                     //
+    assert(stackObject != (Stack_t*)    POISON_VALUES::POINTER && stackObject && "Inapropriate stack object pointer");                   //
                                                                                                                                          //
     if (stackObject->self != canary)                                                                                                     //
         return CANARY_ACCESSED;                                                                                                          //
@@ -400,7 +414,7 @@ ERROR_CODE CanaryValid(Stack_t* stackObject, Stack_t* canary)                   
                                                                                                                                          //
 ERROR_CODE SecureRealloc(StackElem_t** buffer, size_t nElements, size_t elemSize)                                                        //
 {                                                                                                                                        //           
-    assert(buffer && "Inapropriate pointer");                                                                                            //
+    assert(buffer && "Inapropriate buffer pointer");                                                                                     //
                                                                                                                                          //
     StackElem_t* dataTmp = (StackElem_t*) realloc(*buffer, nElements * elemSize);                                                        //
                                                                                                                                          //
@@ -415,7 +429,7 @@ ERROR_CODE SecureRealloc(StackElem_t** buffer, size_t nElements, size_t elemSize
                                                                                                                                          //
 ERROR_CODE IncreaseCapacity(Stack_t* stackObject)                                                                                        //
 {                                                                                                                                        //
-    assert(stackObject  && "Invalid pointer to the stack object");                                                                       //
+    assert(stackObject != (Stack_t*)    POISON_VALUES::POINTER && stackObject && "Inapropriate stack object pointer");                   //                                          
                                                                                                                                          //
     if (stackObject->size == stackObject->capacity) {                                                                                    //
                                                                                                                                          //
@@ -435,7 +449,7 @@ ERROR_CODE IncreaseCapacity(Stack_t* stackObject)                               
                                                                                                                                          //
 ERROR_CODE DecreaseCapacity(Stack_t* stackObject)                                                                                        //
 {                                                                                                                                        //
-    assert(stackObject  && "Invalid pointer to the stack object");                                                                       //
+    assert(stackObject != (Stack_t*)    POISON_VALUES::POINTER && stackObject && "Inapropriate stack object pointer");                   //                                          
                                                                                                                                          //
     /// a point when it's time to decrease the capacity                                                                                  //
     size_t decrementPoint = stackObject->capacity / 4;                                                                                   //
