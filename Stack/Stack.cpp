@@ -48,138 +48,138 @@ Hash_t GetHash(Stack_t* stackObject);                                           
 
 
 //{--------------------------------------------------------Stack-methods-------------------------------------------------------------------
-
-ERROR_CODE StackPush(Stack_t* stackObject, StackElem_t value) 
-{
-#if defined(VALIDATION_ACTIVE)
-
-    VALIDATE(stackObject, StackValid, StackDump);
-
-#endif // VALIDATION_ACTIVE
-
-    if (IncreaseCapacity(stackObject->self) != NO_ERROR) 
-        RETURN(ALLOCATION_ERROR);
-
-    stackObject->data[stackObject->size++] = value;
-
-#if defined(VALIDATION_ACTIVE)
-
-    stackObject->hash = GetHash(stackObject->self);
-
-    VALIDATE(stackObject, StackValid, StackDump);
-
-#endif // VALIDATION_ACTIVE
-
-    RETURN(NO_ERROR);
-} 
-
-
-ERROR_CODE StackPop(Stack_t* stackObject)
-{
-#if defined(VALIDATION_ACTIVE)
-
-    VALIDATE(stackObject, StackValid, StackDump);
-
-#endif // VALIDATION_ACTIVE
-
-    if (stackObject->size <= 0)
-        RETURN(EMPTY_STACK_POP_ATTEMPT);
-
-    if (DecreaseCapacity(stackObject->self) != NO_ERROR)
-        RETURN(ALLOCATION_ERROR);
-
-    stackObject->data[--stackObject->size] = (StackElem_t) POISON_VALUES::NUMBER;
-
-#if defined(VALIDATION_ACTIVE)
-
-    stackObject->hash = GetHash(stackObject->self);
-
-    VALIDATE(stackObject, StackValid, StackDump);
-
-#endif // VALIDATION_ACTIVE
-
-    RETURN(NO_ERROR);
-}
-
-
-StackElem_t StackTop(Stack_t* stackObject)
-{
-#if defined(VALIDATION_ACTIVE)
-
-    VALIDATE(stackObject, StackValid, StackDump);
-
-#endif // VALIDATION_ACTIVE
-
-    if (stackObject->size <= 0) 
-        RETURN(EMPTY_STACK_TOP_ATTEMPT);
-
-    return stackObject->data[stackObject->size - 1];
-}
-
-
-#if defined(VALIDATION_ACTIVE) 
-
-void StackDump(Stack_t* stackObject, const char* localName, FILE* destFile, Location_t location)
-{
-    assert(stackObject && localName && destFile && "Inapropriate pointer");
-
-    const char* stackStatus = (StackValid(stackObject->self)) ? "ok" : "ERROR!";
-    
-    fprintf(destFile, "\nstack<Stack_t> \"%s\" [%p] (%s) %s: %s(%d) aka \"%s\":\n\n", 
-            stackObject->name, stackObject->self, stackStatus, location.file, location.function, location.line, localName);
-
-    const char* sizeStatus = (SizeValid(stackObject->size, stackObject->capacity) == NO_ERROR) ? "ok" : "ERROR!";
-    const char* capacityStatus = sizeStatus;
-
-    fprintf(destFile,
-            "\tsize_t size        = %-10zd (%s)\n"
-            "\tsize_t capacity    = %-10zd (%s)\n",
-            stackObject->size, sizeStatus, stackObject->capacity, capacityStatus);
-
-    const char* leftCanaryStatus  = (CanaryValid(stackObject->self, stackObject->canaryLeft)  == NO_ERROR) ? "ok" : "ERROR!";
-    const char* rightCanaryStatus = (CanaryValid(stackObject->self, stackObject->canaryRight) == NO_ERROR) ? "ok" : "ERROR!";
-
-    fprintf(destFile,
-            "\tstack* canaryLeft  = %-10llu (%s)\n"
-            "\tstack* canaryRight = %-10llu (%s)\n",
-            stackObject->canaryLeft, leftCanaryStatus, stackObject->canaryRight, rightCanaryStatus);
-
-    const char* hashStatus = (HashValid(stackObject->self) == NO_ERROR) ? "ok" : "ERROR!";
-
-    fprintf(destFile,
-            "\tHash_t hash        = %-10llu (%s)\n"
-            "\tCorrect hash       = %-10llu\n\n",
-            stackObject->hash, hashStatus, GetHash(stackObject->self));   
-
-    bool dataIsOk = true;
-
-    for (int i = 0; i < stackObject->size; ++i) 
-        dataIsOk = NumberValid(stackObject->data[i]);
-
-    const char* dataStatus = (dataIsOk) ? "ok" : "ERROR!";
-
-    fprintf(destFile,
-            "\tStackElem_t* data [%p] (%s) {\n\n",
-            stackObject->data, dataStatus);   
-
-    const char* valueStatus = nullptr;
-
-    for (int i = 0; i < stackObject->size; ++i) {
-        valueStatus = (NumberValid(stackObject->data[i]) == NO_ERROR) ? "ok" : "ERROR!";
-        fprintf(destFile,
-                "\t\t*[%d] = %llu (%s);\n", i, stackObject->data[i], valueStatus);
-    }
-
-    for (int i = stackObject->size; i < stackObject->capacity; ++i) {
-        valueStatus = (NumberValid(stackObject->data[i]) == NO_ERROR) ? "ok" : "ERROR!";
-        fprintf(destFile,
-                "\t\t[%d] = %llu;\n", i, stackObject->data[i], valueStatus);
-    }
-
-    fprintf(destFile, "\t}\n\n");
-}
-
-#endif // VALIDATION_ACTIVE 
+                                                                                                                                         //
+ERROR_CODE StackPush(Stack_t* stackObject, StackElem_t value)                                                                            //
+{                                                                                                                                        //
+#if defined(VALIDATION_ACTIVE)                                                                                                           //
+                                                                                                                                         //
+    VALIDATE(stackObject, StackValid, StackDump);                                                                                        //
+                                                                                                                                         //
+#endif // VALIDATION_ACTIVE                                                                                                              //
+                                                                                                                                         //
+    if (IncreaseCapacity(stackObject->self) != NO_ERROR)                                                                                 //
+        RETURN(ALLOCATION_ERROR);                                                                                                        //
+                                                                                                                                         //
+    stackObject->data[stackObject->size++] = value;                                                                                      //
+                                                                                                                                         //
+#if defined(VALIDATION_ACTIVE)                                                                                                           //
+                                                                                                                                         //
+    stackObject->hash = GetHash(stackObject->self);                                                                                      //
+                                                                                                                                         //
+    VALIDATE(stackObject, StackValid, StackDump);                                                                                        //
+                                                                                                                                         //
+#endif // VALIDATION_ACTIVE                                                                                                              //
+                                                                                                                                         //
+    RETURN(NO_ERROR);                                                                                                                    //
+}                                                                                                                                        //
+                                                                                                                                         //
+                                                                                                                                         //
+ERROR_CODE StackPop(Stack_t* stackObject)                                                                                                //
+{                                                                                                                                        //                                                                                                                                                                                                                                                                               //
+#if defined(VALIDATION_ACTIVE)                                                                                                           //
+                                                                                                                                         //
+    VALIDATE(stackObject, StackValid, StackDump);                                                                                        //
+                                                                                                                                         //
+#endif // VALIDATION_ACTIVE                                                                                                              //
+                                                                                                                                         //
+    if (stackObject->size <= 0)                                                                                                          //
+        RETURN(EMPTY_STACK_POP_ATTEMPT);                                                                                                 //
+                                                                                                                                         //
+    if (DecreaseCapacity(stackObject->self) != NO_ERROR)                                                                                 //
+        RETURN(ALLOCATION_ERROR);                                                                                                        //
+                                                                                                                                         //
+    stackObject->data[--stackObject->size] = (StackElem_t) POISON_VALUES::NUMBER;                                                        //
+                                                                                                                                         //
+#if defined(VALIDATION_ACTIVE)                                                                                                           //
+                                                                                                                                         //
+    stackObject->hash = GetHash(stackObject->self);                                                                                      //
+                                                                                                                                         //
+    VALIDATE(stackObject, StackValid, StackDump);                                                                                        //
+                                                                                                                                         //
+#endif // VALIDATION_ACTIVE                                                                                                              //
+                                                                                                                                         //
+    RETURN(NO_ERROR);                                                                                                                    //
+}                                                                                                                                        //
+                                                                                                                                         //
+                                                                                                                                         //
+StackElem_t StackTop(Stack_t* stackObject)                                                                                               //
+{                                                                                                                                        //
+#if defined(VALIDATION_ACTIVE)                                                                                                           //
+                                                                                                                                         //
+    VALIDATE(stackObject, StackValid, StackDump);                                                                                        //
+                                                                                                                                         //
+#endif // VALIDATION_ACTIVE                                                                                                              //
+                                                                                                                                         //
+    if (stackObject->size <= 0)                                                                                                          //
+        RETURN(EMPTY_STACK_TOP_ATTEMPT);                                                                                                 //
+                                                                                                                                         //
+    return stackObject->data[stackObject->size - 1];                                                                                     //
+}                                                                                                                                        //
+                                                                                                                                         //
+                                                                                                                                         //
+#if defined(VALIDATION_ACTIVE)                                                                                                           //
+                                                                                                                                         //
+void StackDump(Stack_t* stackObject, const char* localName, FILE* destFile, Location_t location)                                         //
+{                                                                                                                                        //
+    assert(stackObject && localName && destFile && "Inapropriate pointer");                                                              //
+                                                                                                                                         //
+    const char* stackStatus = (StackValid(stackObject->self)) ? "ok" : "ERROR!";                                                         //
+                                                                                                                                         //
+    fprintf(destFile, "\nstack<Stack_t> \"%s\" [%p] (%s) %s: %s(%d) aka \"%s\":\n\n",                                                    //
+            stackObject->name, stackObject->self, stackStatus, location.file, location.function, location.line, localName);              //
+                                                                                                                                         //
+    const char* sizeStatus = (SizeValid(stackObject->size, stackObject->capacity) == NO_ERROR) ? "ok" : "ERROR!";                        //
+    const char* capacityStatus = sizeStatus;                                                                                             //
+                                                                                                                                         //
+    fprintf(destFile,                                                                                                                    //
+            "\tsize_t size        = %-10zd (%s)\n"                                                                                       //
+            "\tsize_t capacity    = %-10zd (%s)\n",                                                                                      //
+            stackObject->size, sizeStatus, stackObject->capacity, capacityStatus);                                                       //
+                                                                                                                                         //
+    const char* leftCanaryStatus  = (CanaryValid(stackObject->self, stackObject->canaryLeft)  == NO_ERROR) ? "ok" : "ERROR!";            //
+    const char* rightCanaryStatus = (CanaryValid(stackObject->self, stackObject->canaryRight) == NO_ERROR) ? "ok" : "ERROR!";            //
+                                                                                                                                         //
+    fprintf(destFile,                                                                                                                    //
+            "\tstack* canaryLeft  = %-10llu (%s)\n"                                                                                      //
+            "\tstack* canaryRight = %-10llu (%s)\n",                                                                                     //
+            stackObject->canaryLeft, leftCanaryStatus, stackObject->canaryRight, rightCanaryStatus);                                     //
+                                                                                                                                         //
+    const char* hashStatus = (HashValid(stackObject->self) == NO_ERROR) ? "ok" : "ERROR!";                                               //
+                                                                                                                                         //
+    fprintf(destFile,                                                                                                                    //
+            "\tHash_t hash        = %-10llu (%s)\n"                                                                                      //
+            "\tCorrect hash       = %-10llu\n\n",                                                                                        //
+            stackObject->hash, hashStatus, GetHash(stackObject->self));                                                                  //
+                                                                                                                                         //
+    bool dataIsOk = true;                                                                                                                //
+                                                                                                                                         //
+    for (int i = 0; i < stackObject->size; ++i)                                                                                          //
+        dataIsOk = NumberValid(stackObject->data[i]);                                                                                    //
+                                                                                                                                         //
+    const char* dataStatus = (dataIsOk) ? "ok" : "ERROR!";                                                                               //
+                                                                                                                                         //
+    fprintf(destFile,                                                                                                                    //
+            "\tStackElem_t* data [%p] (%s) {\n\n",                                                                                       //
+            stackObject->data, dataStatus);                                                                                              //
+                                                                                                                                         //
+    const char* valueStatus = nullptr;                                                                                                   //
+                                                                                                                                         //
+    for (int i = 0; i < stackObject->size; ++i) {                                                                                        //
+        valueStatus = (NumberValid(stackObject->data[i]) == NO_ERROR) ? "ok" : "ERROR!";                                                 //
+        fprintf(destFile,                                                                                                                //
+                "\t\t*[%d] = %llu (%s);\n", i, stackObject->data[i], valueStatus);                                                       //
+    }                                                                                                                                    //
+                                                                                                                                         //
+    for (int i = stackObject->size; i < stackObject->capacity; ++i) {                                                                    //
+        valueStatus = (NumberValid(stackObject->data[i]) == NO_ERROR) ? "ok" : "ERROR!";                                                 //
+        fprintf(destFile,                                                                                                                //
+                "\t\t[%d] = %llu;\n", i, stackObject->data[i], valueStatus);                                                             //
+    }                                                                                                                                    //
+                                                                                                                                         //
+    fprintf(destFile, "\t}\n\n");                                                                                                        //
+}                                                                                                                                        //
+                                                                                                                                         //
+#endif // VALIDATION_ACTIVE                                                                                                              //
 //}----------------------------------------------------------------------------------------------------------------------------------------
 
 
@@ -298,93 +298,93 @@ void StackDelete(Stack_t** stackObject_ptr)                                     
 
 
 //{--------------------------------------------------------Validation-functions------------------------------------------------------------
-
-bool StackValid(Stack_t* stackObject)
-{
-    assert(stackObject && "Inapropriate pointer");
-
-    bool validator = true;
-
-    if (VALIDATION_DEPTH >= 1) {
-
-        validator = (PointerValid((void*) stackObject->top)  == NO_ERROR &&
-                     PointerValid((void*) stackObject->pop)  == NO_ERROR &&
-                     PointerValid((void*) stackObject->push) == NO_ERROR &&
-                     PointerValid((void*) stackObject->dump) == NO_ERROR &&
-                     PointerValid((void*) stackObject->self) == NO_ERROR &&
-                     PointerValid((void*) stackObject->name) == NO_ERROR &&
-                     PointerValid((void*) stackObject->data) == NO_ERROR &&
-                     SizeValid(stackObject->size, stackObject->capacity) == NO_ERROR);
-    }
-
-    if (VALIDATION_DEPTH >= 2) {
-        validator = (CanaryValid(stackObject->self, stackObject->canaryLeft)  == NO_ERROR &&
-                     CanaryValid(stackObject->self, stackObject->canaryRight) == NO_ERROR);
-    }
-
-    if (VALIDATION_DEPTH >= 3) {
-        validator = HashValid(stackObject) == NO_ERROR;
-    }
-
-    return validator;
-}
-
-
-ERROR_CODE NumberValid(StackElem_t value)
-{
-    if (value == (StackElem_t) POISON_VALUES::NUMBER)
-        return POISON_NUMBER;
-
-    return NO_ERROR;
-}
-
-
-ERROR_CODE SizeValid(size_t size, size_t capacity)
-{
-    if (size > capacity)
-        return CAPACITY_ERROR;
-
-    return NO_ERROR;
-}
-
-
-ERROR_CODE PointerValid(void* pointer)
-{
-    if (pointer == nullptr)
-        return POINTER_IS_NULL;
-    else if (pointer == (void*) POISON_VALUES::POINTER)
-        return POISON_POINTER;
-
-    return NO_ERROR;
-}
-
-
-ERROR_CODE HashValid(Stack_t* stackObject)
-{
-    assert(stackObject && "Inapropriate pointer");
-
-    Hash_t oldHash     = stackObject->hash;
-    stackObject->hash  = NEUTRAL_HASH;
-    Hash_t currentHash = GetHash(stackObject->self);
-
-    if (oldHash != currentHash)
-        return INVALID_HASH;
-    else
-        stackObject->hash = oldHash;
-
-    return NO_ERROR;
-}
-
-
-ERROR_CODE CanaryValid(Stack_t* stackObject, Stack_t* canary)
-{
-    assert(canary && stackObject && "Inapropriate pointer");
-
-    if (stackObject->self != canary)
-        return CANARY_ACCESSED;
-
-    return NO_ERROR;
-}
+                                                                                                                                         //
+bool StackValid(Stack_t* stackObject)                                                                                                    //
+{                                                                                                                                        //
+    assert(stackObject && "Inapropriate pointer");                                                                                       //
+                                                                                                                                         //
+    bool validator = true;                                                                                                               //
+                                                                                                                                         //
+    if (VALIDATION_DEPTH >= 1) {                                                                                                         //
+                                                                                                                                         //
+        validator = (PointerValid((void*) stackObject->top)  == NO_ERROR &&                                                              //
+                     PointerValid((void*) stackObject->pop)  == NO_ERROR &&                                                              //
+                     PointerValid((void*) stackObject->push) == NO_ERROR &&                                                              //
+                     PointerValid((void*) stackObject->dump) == NO_ERROR &&                                                              //
+                     PointerValid((void*) stackObject->self) == NO_ERROR &&                                                              //
+                     PointerValid((void*) stackObject->name) == NO_ERROR &&                                                              //
+                     PointerValid((void*) stackObject->data) == NO_ERROR &&                                                              //
+                     SizeValid(stackObject->size, stackObject->capacity) == NO_ERROR);                                                   //
+    }                                                                                                                                    //
+                                                                                                                                         //
+    if (VALIDATION_DEPTH >= 2) {                                                                                                         //
+        validator = (CanaryValid(stackObject->self, stackObject->canaryLeft)  == NO_ERROR &&                                             //
+                     CanaryValid(stackObject->self, stackObject->canaryRight) == NO_ERROR);                                              //
+    }                                                                                                                                    //
+                                                                                                                                         //
+    if (VALIDATION_DEPTH >= 3) {                                                                                                         //
+        validator = HashValid(stackObject) == NO_ERROR;                                                                                  //
+    }                                                                                                                                    //
+                                                                                                                                         //
+    return validator;                                                                                                                    //
+}                                                                                                                                        //
+                                                                                                                                         //
+                                                                                                                                         //
+ERROR_CODE NumberValid(StackElem_t value)                                                                                                //
+{                                                                                                                                        //
+    if (value == (StackElem_t) POISON_VALUES::NUMBER)                                                                                    //
+        return POISON_NUMBER;                                                                                                            //
+                                                                                                                                         //
+    return NO_ERROR;                                                                                                                     //
+}                                                                                                                                        //
+                                                                                                                                         //
+                                                                                                                                         //
+ERROR_CODE SizeValid(size_t size, size_t capacity)                                                                                       //
+{                                                                                                                                        //
+    if (size > capacity)                                                                                                                 //
+        return CAPACITY_ERROR;                                                                                                           //
+                                                                                                                                         //
+    return NO_ERROR;                                                                                                                     //
+}                                                                                                                                        //
+                                                                                                                                         //
+                                                                                                                                         //
+ERROR_CODE PointerValid(void* pointer)                                                                                                   //
+{                                                                                                                                        //
+    if (pointer == nullptr)                                                                                                              //
+        return POINTER_IS_NULL;                                                                                                          //
+    else if (pointer == (void*) POISON_VALUES::POINTER)                                                                                  //
+        return POISON_POINTER;                                                                                                           //
+                                                                                                                                         //
+    return NO_ERROR;                                                                                                                     //
+}                                                                                                                                        //
+                                                                                                                                         //
+                                                                                                                                         //
+ERROR_CODE HashValid(Stack_t* stackObject)                                                                                               //
+{                                                                                                                                        //
+    assert(stackObject && "Inapropriate pointer");                                                                                       //
+                                                                                                                                         //
+    Hash_t oldHash     = stackObject->hash;                                                                                              //
+    stackObject->hash  = NEUTRAL_HASH;                                                                                                   //
+    Hash_t currentHash = GetHash(stackObject->self);                                                                                     //
+                                                                                                                                         //
+    if (oldHash != currentHash)                                                                                                          //
+        return INVALID_HASH;                                                                                                             //
+    else                                                                                                                                 //
+        stackObject->hash = oldHash;                                                                                                     //
+                                                                                                                                         //
+    return NO_ERROR;                                                                                                                     //
+}                                                                                                                                        //
+                                                                                                                                         //
+                                                                                                                                         //
+ERROR_CODE CanaryValid(Stack_t* stackObject, Stack_t* canary)                                                                            //
+{                                                                                                                                        //
+    assert(canary && stackObject && "Inapropriate pointer");                                                                             //
+                                                                                                                                         //
+    if (stackObject->self != canary)                                                                                                     //
+        return CANARY_ACCESSED;                                                                                                          //
+                                                                                                                                         //
+    return NO_ERROR;                                                                                                                     //
+}                                                                                                                                        //
 //}----------------------------------------------------------------------------------------------------------------------------------------
 
 
