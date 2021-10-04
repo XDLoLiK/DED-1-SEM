@@ -27,6 +27,12 @@ const Hash_t NEUTRAL_HASH = 77777;
     #define VALIDATION_DEPTH HARD
 #endif
 
+#ifdef VALIDATION_ACTIVE
+    #define ON_DEBUG(expr) expr
+#else
+    #define ON_DEBUG(expr)
+#endif
+
 //{--------------------------------Stack_t-init-macroses-------------------------------------------
 
 #define Stack_t(name)                           \
@@ -77,10 +83,8 @@ typedef uint64_t StackElem_t;
 
 typedef struct stack {
 
-#ifdef VALIDATION_ACTIVE
 // left canary
-    stack* canaryLeft = nullptr;
-#endif
+    ON_DEBUG(stack* canaryLeft = nullptr);
 
 // attributes
     size_t size       = 0;
@@ -95,13 +99,11 @@ typedef struct stack {
     ERROR_CODE  (*push) (stack* self, StackElem_t value)                             = nullptr;
     void        (*dump) (stack* self, const char* localName, FILE* dest, Location_t) = nullptr;
 
-#ifdef VALIDATION_ACTIVE
 // Hash
-    Hash_t hash = NEUTRAL_HASH;
+    ON_DEBUG(Hash_t hash = NEUTRAL_HASH);
 
 // right canary
-    stack* canaryRight = nullptr;
-#endif
+    ON_DEBUG(stack* canaryRight = nullptr);
 
 } Stack_t;
 //}------------------------------------------------------------------------------------------------
