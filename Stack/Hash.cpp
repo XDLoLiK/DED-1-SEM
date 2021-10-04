@@ -8,17 +8,7 @@ Hash_t PermutationTable(Hash_t index)
 {
     assert(index >= 0 && "Invalid Index");
 
-    Hash_t maxIndex = 1;
-
-    /// Max Hash_t value size is 2^64 - 1 which 
-    /// is also 2^63 - 1 + 2^63 (to avoid overflow)
-    for (int i = 0; i < 62; ++i) {
-        maxIndex *= 2;
-    }
-
-    maxIndex = maxIndex - 1 + maxIndex;
-
-    return maxIndex - index;
+    return index * 2 + 9;
 }
 
 Hash_t CalculateHash(void* data, size_t dataSize)

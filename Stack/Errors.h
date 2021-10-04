@@ -7,26 +7,33 @@
 
 //}------------------------------------------Error-logs--------------------------------------------
 
-#define RETURN(ErrorName)                                                               \
-    ERROR_LOG(ErrorName);                                                               \
-    return ErrorName
+#define RETURN(ErrorName) {                                                                 \
+                                                                                            \
+    ERROR_LOG(ErrorName);                                                                   \
+    return ErrorName;                                                                       \
+}                                                                                           \
+                                                                                            \
+do {                                                                                        \
+                                                                                            \
+} while(0)
 
 
-#define ERROR_LOG(ErrorName) {                                                          \
-    Location_t location = __LOCATION__;                                                 \
-                                                                                        \
-    if ((ErrorName) != NO_ERROR) {                                                      \
-        printf("=========================ERROR OCCURRED!=======================\n\n");  \
-        printf(">>> REASON:   %s\n", #ErrorName);                                       \
-        printf(">>> FILE:     %s\n", location.file);                                    \
-        printf(">>> FUNCTION: %s()\n", location.function);                              \
-        printf(">>> LINE:     %d\n", location.line);                                    \
-        printf("===============================================================\n\n");  \
-    }                                                                                   \
-}                                                                                       \
-                                                                                        \
-do {                                                                                    \
-                                                                                        \
+#define ERROR_LOG(ErrorName) {                                                              \
+    Location_t location = __LOCATION__;                                                     \
+                                                                                            \
+    if ((ErrorName) != NO_ERROR) {                                                          \
+        printf("\n=========================ERROR=OCCURRED!=======================\n\n");    \
+        printf(">>> ERROR CODE: %d\n", ErrorName);                                          \
+        printf(">>> REASON:     %s\n", #ErrorName);                                         \
+        printf(">>> FILE:       %s\n", location.file);                                      \
+        printf(">>> FUNCTION:   %s()\n", location.function);                                \
+        printf(">>> LINE:       %d\n", location.line);                                      \
+        printf("\n===============================================================\n\n");    \
+    }                                                                                       \
+}                                                                                           \
+                                                                                            \
+do {                                                                                        \
+                                                                                            \
 } while(0)
 //}------------------------------------------------------------------------------------------------
 

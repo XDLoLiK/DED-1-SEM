@@ -10,34 +10,27 @@ int main(void)
 {
     Stack_t(array); 
 
-    // int num = 0;
-    // printf("%zd\n", CalculateHash(&num, sizeof num));
+    int num = 0;
+    printf("%zd\n", CalculateHash(&num, sizeof num));
 
-    array.push(array.self, 1);
-    printf("%llu\n", array.top(array.self));
-    array.push(array.self, 2);
-    printf("%llu\n", array.top(array.self));
-    array.push(array.self, 3);
-    printf("%llu\n", array.top(array.self));
-    array.push(array.self, 4);
-    printf("%llu\n", array.top(array.self));
-    array.push(array.self, 5);
-    printf("%llu\n", array.top(array.self));
-    array.push(array.self, 6);
-    printf("%llu\n", array.top(array.self));
+    printf("Hash %zd;\n", array.hash);    
 
-
-    for (int i = 0; i < 33; ++i) {
+    for (int i = 0; i < 32; ++i) {
         array.push(array.self, i);
-        printf("num %d; size %zd; capacity %zd; value %llu\n", i, array.size, array.capacity, array.top(array.self));
+        // printf("num %d; size %zd; capacity %zd; value %llu\n", i, array.size, array.capacity, array.top(array.self));
     }
 
+    printf("Hash %zd;\n", array.hash);
     printf("\n\n");
 
-    for (int i = 32; i >= 1; --i) {
+    for (int i = 32; i >= 0; --i) {
         array.pop(array.self);
-        printf("num %d; size %zd; capacity %zd; value %llu\n", i, array.size, array.capacity, array.top(array.self));
+        // printf("num %d; size %zd; capacity %zd; value %llu\n", i, array.size, array.capacity, array.top(array.self));
     }
+
+    printf("%llu\n", array.top(array.self));
+
+    printf("Hash %zd;\n", array.hash);
 
     StackDtor(array.self);
 

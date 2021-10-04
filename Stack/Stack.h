@@ -19,6 +19,7 @@
 #include "Errors.h"
 #include "Hash.h"
 
+const Hash_t NEUTRAL_HASH = 77777;
 
 #define VALIDATION_ACTIVE
 
@@ -73,6 +74,7 @@ enum class POISON_VALUES {
 
 typedef uint64_t StackElem_t;
 
+
 typedef struct stack {
 
 #ifdef VALIDATION_ACTIVE
@@ -83,8 +85,8 @@ typedef struct stack {
 // attributes
     size_t size       = 0;
     size_t capacity   = 0;
-    const char* name  = nullptr;
     stack* self       = nullptr;
+    const char* name  = nullptr;
     StackElem_t* data = nullptr;
 
 // methods
@@ -95,7 +97,7 @@ typedef struct stack {
 
 #ifdef VALIDATION_ACTIVE
 // Hash
-    Hash_t hash = 0;
+    Hash_t hash = NEUTRAL_HASH;
 
 // right canary
     stack* canaryRight = nullptr;
@@ -177,14 +179,6 @@ void StackDelete(Stack_t** stackObject_ptr);
  * Data protection related functions
  */
 
-/**
- * Checks realloc result before assignment
- * @param[in,out] buffer pointer to the buffer
- * @param[in] nElements number of elements in the buffer
- * @param[in] elemSize size of one element
- * @return realloc status (ERROR_CODE)
- */
-ERROR_CODE SecureRealloc(StackElem_t** buffer, size_t nElements, size_t elemSize);
 
 /**
  * Checks stack for errors
@@ -222,7 +216,7 @@ ERROR_CODE PointerValid(void* pointer);
  * @param hash
  * @return
  */
-ERROR_CODE HashValid(void* data, size_t dataSize, Hash_t hash);
+ERROR_CODE HashValid(Stack_t* stackObject);
 
 /**
  * Checks canary for errors
