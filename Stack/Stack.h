@@ -19,7 +19,9 @@
 #include "Errors.h"
 #include "Hash.h"
 
+
 const Hash_t NEUTRAL_HASH = 77777;
+
 
 #define VALIDATION_ACTIVE
 
@@ -27,11 +29,13 @@ const Hash_t NEUTRAL_HASH = 77777;
     #define VALIDATION_DEPTH HARD
 #endif
 
+
 #ifdef VALIDATION_ACTIVE
     #define ON_DEBUG(expr) expr
 #else
     #define ON_DEBUG(expr)
 #endif
+
 
 //{--------------------------------Stack_t-init-macroses-------------------------------------------
 
@@ -59,10 +63,10 @@ if (StackNew(&name, #name) != NO_ERROR)         \
 //{--------------------------------Validation-levels-----------------------------------------------
 
 enum ValidationDepth {
-    NO_VALIDATION = 0, /// does no validation
-    EASY          = 1, /// checks only stack's fields
-    MEDIUM        = 2, /// checks canaries
-    HARD          = 3  /// checks hashes
+    NO_VALIDATION = 0,      /// does no validation
+    EASY          = 1,      /// checks only stack's fields
+    MEDIUM        = 2,      /// checks canaries
+    HARD          = 3       /// checks hashes
 };
 //}------------------------------------------------------------------------------------------------
 
@@ -192,39 +196,39 @@ bool StackValid(Stack_t* stackObject);
 /**
  * Checks number for errors
  * @param[in] value
- * @return
+ * @return number validation status (ERROR_CODE)
  */
 ERROR_CODE NumberValid(StackElem_t value);
 
 /**
  * Checks size value for errors
- * @param size
- * @param capacity
- * @return
+ * @param[in] size stack size
+ * @param[in] capacity stack capacity
+ * @return size validation status (ERROR_CODE)
  */
 ERROR_CODE SizeValid(size_t size, size_t capacity);
 
 /**
  * Checks pointer for errors
- * @param pointer
- * @return
+ * @param[in] pointer some pointer
+ * @return pointer validation status (ERROR_CODE)
  */
 ERROR_CODE PointerValid(void* pointer);
 
 /**
  * Checks hash for errors
- * @param data
- * @param dataSize
- * @param hash
- * @return
+ * @param[in] data
+ * @param[in] dataSize
+ * @param[in] hash
+ * @return hash validation status (ERROR_CODE)
  */
 ERROR_CODE HashValid(Stack_t* stackObject);
 
 /**
  * Checks canary for errors
- * @param stackObject
- * @param canary
- * @return
+ * @param[in] stackObject pointer to the stack object
+ * @param[in] canary pointer to the canary
+ * @return canary validation status (ERROR_CODE)
  */
 ERROR_CODE CanaryValid(Stack_t* stackObject, Stack_t* canary);
 //}------------------------------------------------------------------------------------------------

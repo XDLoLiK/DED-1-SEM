@@ -8,7 +8,13 @@
 
 int main(void)
 {
-    Stack_t(array); 
+    Stack_t (array); 
+
+    array.dump(array.self, "array", stdout, __LOCATION__);
+
+    array.push(array.self, 1);
+    
+    array.dump(array.self, "array", stdout, __LOCATION__);
 
     int num = 0;
     printf("%zd\n", CalculateHash(&num, sizeof num));
@@ -32,6 +38,11 @@ int main(void)
 
     printf("Hash %zd;\n", array.hash);
 
+    array.hash = 1;
+
+    array.push(array.self, 1);
+
+    StackDtor(array.self);
     StackDtor(array.self);
 
     return 0;

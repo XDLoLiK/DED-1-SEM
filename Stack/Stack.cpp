@@ -123,11 +123,13 @@ void StackDump(Stack_t* stackObject, const char* localName, FILE* destFile, Loca
 {                                                                                                                                        //
     assert(stackObject && localName && destFile && "Inapropriate pointer");                                                              //
                                                                                                                                          //
+    // dumping struct info and status                                                                                                    //
     const char* stackStatus = (StackValid(stackObject->self)) ? "ok" : "ERROR!";                                                         //
                                                                                                                                          //
     fprintf(destFile, "\nstack<Stack_t> \"%s\" [%p] (%s) %s: %s(%d) aka \"%s\":\n\n",                                                    //
             stackObject->name, stackObject->self, stackStatus, location.file, location.function, location.line, localName);              //
                                                                                                                                          //
+    // dumping size and capacity                                                                                                         //
     const char* sizeStatus = (SizeValid(stackObject->size, stackObject->capacity) == NO_ERROR) ? "ok" : "ERROR!";                        //
     const char* capacityStatus = sizeStatus;                                                                                             //
                                                                                                                                          //
@@ -136,6 +138,7 @@ void StackDump(Stack_t* stackObject, const char* localName, FILE* destFile, Loca
             "\tsize_t capacity    = %-10zd (%s)\n",                                                                                      //
             stackObject->size, sizeStatus, stackObject->capacity, capacityStatus);                                                       //
                                                                                                                                          //
+    // dumping canaries                                                                                                                  //
     const char* leftCanaryStatus  = (CanaryValid(stackObject->self, stackObject->canaryLeft)  == NO_ERROR) ? "ok" : "ERROR!";            //
     const char* rightCanaryStatus = (CanaryValid(stackObject->self, stackObject->canaryRight) == NO_ERROR) ? "ok" : "ERROR!";            //
                                                                                                                                          //
@@ -144,6 +147,7 @@ void StackDump(Stack_t* stackObject, const char* localName, FILE* destFile, Loca
             "\tstack* canaryRight = %-10llu (%s)\n",                                                                                     //
             stackObject->canaryLeft, leftCanaryStatus, stackObject->canaryRight, rightCanaryStatus);                                     //
                                                                                                                                          //
+    // dumping hash                                                                                                                      //
     const char* hashStatus = (HashValid(stackObject->self) == NO_ERROR) ? "ok" : "ERROR!";                                               //
                                                                                                                                          //
     fprintf(destFile,                                                                                                                    //
@@ -151,10 +155,11 @@ void StackDump(Stack_t* stackObject, const char* localName, FILE* destFile, Loca
             "\tCorrect hash       = %-10llu\n\n",                                                                                        //
             stackObject->hash, hashStatus, GetHash(stackObject->self));                                                                  //
                                                                                                                                          //
+    // dumping data array status                                                                                                         //
     bool dataIsOk = true;                                                                                                                //
                                                                                                                                          //
     for (int i = 0; i < stackObject->size; ++i)                                                                                          //
-        dataIsOk = NumberValid(stackObject->data[i]);                                                                                    //
+        dataIsOk = NumberValid(stackObject->data[i]) == NO_ERROR;                                                                        //
                                                                                                                                          //
     const char* dataStatus = (dataIsOk) ? "ok" : "ERROR!";                                                                               //
                                                                                                                                          //
@@ -162,6 +167,7 @@ void StackDump(Stack_t* stackObject, const char* localName, FILE* destFile, Loca
             "\tStackElem_t* data [%p] (%s) {\n\n",                                                                                       //
             stackObject->data, dataStatus);                                                                                              //
                                                                                                                                          //
+    // dumping pushed data elements                                                                                                      //
     const char* valueStatus = nullptr;                                                                                                   //
                                                                                                                                          //
     for (int i = 0; i < stackObject->size; ++i) {                                                                                        //
@@ -170,6 +176,7 @@ void StackDump(Stack_t* stackObject, const char* localName, FILE* destFile, Loca
                 "\t\t*[%d] = %llu (%s);\n", i, stackObject->data[i], valueStatus);                                                       //
     }                                                                                                                                    //
                                                                                                                                          //
+    // dumping unused data elements                                                                                                      //
     for (int i = stackObject->size; i < stackObject->capacity; ++i) {                                                                    //
         valueStatus = (NumberValid(stackObject->data[i]) == NO_ERROR) ? "ok" : "ERROR!";                                                 //
         fprintf(destFile,                                                                                                                //
@@ -244,6 +251,8 @@ Hash_t GetHash(Stack_t* stackObject)                                            
                                                                                                                                          //
 void StackDtor(Stack_t* stackObject)                                                                                                     //
 {                                                                                                                                        //
+    assert(stackObject && stackObject != (Stack_t*) POISON_VALUES::POINTER && "Invalid pointer");                                        //
+                                                                                                                                         //
 #if defined(VALIDATION_ACTIVE)                                                                                                           //
                                                                                                                                          //
     VALIDATE(stackObject, StackValid, StackDump);                                                                                        //
@@ -366,11 +375,10 @@ ERROR_CODE HashValid(Stack_t* stackObject)                                      
     Hash_t oldHash     = stackObject->hash;                                                                                              //
     stackObject->hash  = NEUTRAL_HASH;                                                                                                   //
     Hash_t currentHash = GetHash(stackObject->self);                                                                                     //
+    stackObject->hash  = oldHash;                                                                                                        //
                                                                                                                                          //
     if (oldHash != currentHash)                                                                                                          //
         return INVALID_HASH;                                                                                                             //
-    else                                                                                                                                 //
-        stackObject->hash = oldHash;                                                                                                     //
                                                                                                                                          //
     return NO_ERROR;                                                                                                                     //
 }                                                                                                                                        //

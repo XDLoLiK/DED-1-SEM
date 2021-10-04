@@ -11,7 +11,7 @@
  * if data check and data dump functions are define
  */
 
-#define VALIDATION_FAIL ! "VALIDATION FAILED, CHECK THE LOG FILE"
+#define VALIDATION_FAIL !"VALIDATION FAILED, CHECK THE LOG FILE"
 
 #define VALIDATE(obj, checkFunc, dumpFunc) {                \
     Location_t location = __LOCATION__;                     \
@@ -31,7 +31,7 @@ do {                                                        \
     Location_t location = __LOCATION__;                     \
                                                             \
     if (!checkFunc(obj))                                    \
-        assert(VALIDATION_FAIL);                            \                                                       \
+        assert(VALIDATION_FAIL);                            \
 }                                                           \
                                                             \
 do {                                                        \
