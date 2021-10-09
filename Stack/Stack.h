@@ -1,236 +1,163 @@
-/**
- * @file Stack.h
- */
-
 #ifndef STACK_STACK_H
 #define STACK_STACK_H
+#include "config.h"
+#include "Logger.h"
 
-/// Standard libs
-#include <stdlib.h>
-#include <stdio.h>
-#include <assert.h>
-#include <math.h>
-#include <inttypes.h>
-#include <string.h>
+#ifdef STACK_NO_LOG
+#undef LOG_MESSAGE
+#define LOG_MESSAGE(...)
+#endif
+#if defined(STACK_NO_CHECK) || defined(STACK_VALID_CHECK) || defined(STACK_STACK_HASH_CHECKNO_CHECK) || defined(STACK_ALL_CHECK) 
+    #error Define collision. Unable to compile.
+#endif
+#define STACK_NO_CHECK      0x0
+#define STACK_VALID_CHECK   0x1
+#define STACK_HASH_CHECK    0x2
+#define STACK_CANARY_CHECK  0x4
 
-/// Self-written libs
-#include "Location.h"
-#include "Validate.h"
-#include "Errors.h"
-#include "Hash.h"
-
-
-const Hash_t NEUTRAL_HASH = 77777;
-
-
-#define VALIDATION_ACTIVE
-
-#ifdef VALIDATION_ACTIVE
-    #define VALIDATION_DEPTH HARD
+#define STACK_ALL_CHECK     0x7
+#ifndef STACK_PROTECTION_LEVEL
+#define STACK_PROTECTION_LEVEL STACK_ALL_CHECK
 #endif
 
-
-#ifdef VALIDATION_ACTIVE
-    #define ON_DEBUG(expr) expr
+#ifdef STACK_USE_INT
+typedef int stack_element_t;
+const char* const stack_element_format = "%i";
 #else
-    #define ON_DEBUG(expr)
+#ifdef STACK_USE_DOUBLE
+typedef double stack_element_t;
+const char* const stack_element_format = "%f";
+#else
+#ifdef STACK_USE_PTR
+typedef void* stack_element_t;
+const char* const stack_element_format = "%p";
+#else
+typedef int stack_element_t;
+const char* const stack_element_format = "%i";
+#endif
+#endif
 #endif
 
+#if defined(STACK_DUMP)
+    #error Define collision. Unable to compile.
+#endif
+#define STACK_DUMP(stack) stack_dump(stack,LOCATION(stack))
 
-//{--------------------------------Stack_t-init-macroses-------------------------------------------
+typedef unsigned int hash_t;
+#if STACK_PROTECTION_LEVEL & STACK_CANARY_CHECK
+typedef size_t canary_t;
+#else
+typedef void canary_t;
+#endif
 
-#define Stack_t(name)                           \
-                                                \
-Stack_t name = {};                              \
-if (StackCtor(&name, #name) != NO_ERROR)        \
-    assert(0 && "Stack construction failed")    
-
-#define new_Stack_t(name)                       \
-                                                \
-Stack_t* name = nullptr;                        \
-if (StackNew(&name, #name) != NO_ERROR)         \
-    assert(0 && "Stack construction failed")    
-
-
-#define delete_Stack_t(name)                    \
-                                                \
-if (StackNew(&name, #name) != NO_ERROR)         \
-    assert(0 && "Stack construction failed")    
-
-//}------------------------------------------------------------------------------------------------
-
-
-//{--------------------------------Validation-levels-----------------------------------------------
-
-enum ValidationDepth {
-    NO_VALIDATION = 0,      /// does no validation
-    EASY          = 1,      /// checks only stack's fields
-    MEDIUM        = 2,      /// checks canaries
-    HARD          = 3       /// checks hashes
+#ifdef STACK_META_INFORMATION
+struct Location{
+    const char* var_name;
+    const char* func;
+    const char* filename;
+    int         line;
 };
-//}------------------------------------------------------------------------------------------------
+#define LOCATION(x) {#x, __func__, __FILE__, __LINE__}
+#endif
 
+struct Stack{
+#if STACK_PROTECTION_LEVEL & STACK_CANARY_CHECK
+    canary_t canary_beg = 0;
+#endif
+    stack_element_t* data     = NULL;
+    void*            raw_data = NULL;
 
-//{--------------------------------Poison-values---------------------------------------------------
+    size_t capacity = 0;
+    size_t size     = 0;
+    size_t reserved = 0;
 
-enum class POISON_VALUES {
-    POINTER = 666,              /// Pointer poison value
-    NUMBER  = 0xDEADBEE,        /// Hex number poison value
+#if STACK_PROTECTION_LEVEL & STACK_HASH_CHECK
+    hash_t infoHash = 0;
+    hash_t dataHash = 0;
+#endif
+#ifdef STACK_META_INFORMATION
+    Location location  = {};
+#endif
+#if STACK_PROTECTION_LEVEL & STACK_CANARY_CHECK
+    canary_t canary_end = 0;
+#endif
 };
-//}------------------------------------------------------------------------------------------------
 
+enum STACK_ERROR{
+    STACK_ERRNO,                //No error
 
-//{--------------------------------Stack_t-"class"-------------------------------------------------
+    STACK_ANY_WARNING,
+    //Warnings goes here:
+    STACK_REINIT,               //Trying to reInit stack
+    STACK_EMPTY_POP,            //Popping from empty stack
+    STACK_EMPTY_GET,            //Getting from empty stack
+    STACK_WRONG_REALLOC,        //Inappropriate call of realloc.
+    STACK_REFREE,               //Freeing of uninitialized stack
 
-typedef uint64_t StackElem_t;
+    STACK_ANY_ERROR,
+    //Errors goes here:
+    STACK_SIZE_CORRUPTED,       //Found size > capacity
+    STACK_DATA_CORRUPTED,       //Found data corruption
+    STACK_BAD_ALLOC,            //Error during   allocation of memory
+    STACK_BAD_REALLOC,          //Error during REallocation of memory
+    STACK_VALID_FAIL,           //Failed stack_check()
 
+    STACK_ANY_FATAL,
+    //Fatals goes here:
+    STACK_NULL,                 //stack == NULL
+    STACK_UNINITIALIZED,        //Operating of uninitialized stack
+    STACK_CANARY_DEATH,         //Canary check failed
+    STACK_INFO_CORRUPTED,       //Found corruption of internal information
 
-typedef struct stack {
+};
 
-// left canary
-    ON_DEBUG(stack* canaryLeft = nullptr);
-
-// attributes
-    size_t size       = 0;
-    size_t capacity   = 0;
-    stack* self       = nullptr;
-    const char* name  = nullptr;
-    StackElem_t* data = nullptr;
-
-// methods
-    StackElem_t (*top)  (stack* self)                                                = nullptr;
-    ERROR_CODE  (*pop)  (stack* self)                                                = nullptr;
-    ERROR_CODE  (*push) (stack* self, StackElem_t value)                             = nullptr;
-    void        (*dump) (stack* self, const char* localName, FILE* dest, Location_t) = nullptr;
-
-// Hash
-    ON_DEBUG(Hash_t hash = NEUTRAL_HASH);
-
-// right canary
-    ON_DEBUG(stack* canaryRight = nullptr);
-
-} Stack_t;
-//}------------------------------------------------------------------------------------------------
-
-
-//{--------------------------------Stack-methods---------------------------------------------------
-
-/**
- * Removes the last element put into stack
- * @param[in,out] stackObject pointer to the stack object
- * @return operation success status (ERROR_CODE)
+/*!
+ * Inits stack if it wasn't initialized before.
+ * @param stack - stack to init
  */
-ERROR_CODE StackPop(Stack_t* stackObject);
-
-/**
- * Puts an element into stack
- * @param[in,out] stackObject pointer to the stack object
- * @param[in] value a value to put
- * @return operation success status (ERROR_CODE)
+#ifdef STACK_META_INFORMATION
+#define stack_init(stack) stack_init_meta(stack, LOCATION(stack))
+STACK_ERROR stack_init_meta(Stack* stack, Location location);
+#else
+STACK_ERROR stack_init(Stack* stack);
+#endif
+/*!
+ * Frees place taken by stack.
+ * @param stack
  */
-ERROR_CODE StackPush(Stack_t* stackObject, StackElem_t value);
+void stack_free(Stack* stack);
 
-/**
- * Dumps stack info into a file
- * @param[in] stackObject pointer to the stack object
- * @param[in] localName local stack name
- * @param[in] destFile a file to put info in
- * @param[in] location location of the variable
+/*!
+ * Pushes value to top of stack.
+ * @param stack - stack
+ * @param val - value to push
  */
-void StackDump(Stack_t* stackObject, const char* localName, FILE* destFile, Location_t location);
+STACK_ERROR stack_push(Stack* stack, stack_element_t val);
 
-/**
- * Returns first from the top stack element
- * @param[in] stackObject pointer to the stack object
- * @return top element
+/*!
+ * Returns top element of stack.
+ * @param stack
+ * @return value of top element
  */
-StackElem_t StackTop(Stack_t* stackObject);
-//}------------------------------------------------------------------------------------------------
+STACK_ERROR stack_get(Stack *stack, stack_element_t *value);
 
-
-//{------------------------Stack-constructors-and-destructors--------------------------------------
-
-/**
- * Initializes stack data on the static memory
- * @param[in,out] stackObject pointer to the stack object
- * @param[in] name initialization stack variable name
- * @return operation success status (ERROR_CODE)
+/*!
+ * Removes top element from stack.
+ * @param stack
  */
-ERROR_CODE StackCtor(Stack_t* stackObject, const char* name);
+STACK_ERROR stack_pop(Stack* stack);
 
-/**
- * Initializes stack data on the dynamic memory
- * @param[in,out] stackObject pointer to the stack object
+/*!
+ * Preserves stack capacity to [to_reserve]
+ * @param stack
+ * @param to_reserve
+ * @return Error during preservation
  */
-void StackDtor(Stack_t* stackObject);
+STACK_ERROR stack_reserve(Stack *stack, size_t to_reserve);
 
-/**
- * Frees stack fields and memory
- * @param[in,out] stackObject pointer to the stack object
- * @param[in] name
- * @return operation success status (ERROR_CODE)
+/*!
+ * Dumps stack info to log.
+ * @param stack
  */
-ERROR_CODE StackNew(Stack_t** stackObject, const char* name);
-
-/**
- * Frees stack fields and memory
- * @param[in,out] stackObject_ptr pointer to the stack object
- */
-void StackDelete(Stack_t** stackObject_ptr);
-//}------------------------------------------------------------------------------------------------
-
-
-//{------------------------Validation-related-functions--------------------------------------------
-/**
- * Data protection related functions
- */
-
-
-/**
- * Checks stack for errors
- * @param[in] stackObject
- * @return stack validation status (bool)
- */
-bool StackValid(Stack_t* stackObject);
-
-/**
- * Checks number for errors
- * @param[in] value
- * @return number validation status (ERROR_CODE)
- */
-ERROR_CODE NumberValid(StackElem_t value);
-
-/**
- * Checks size value for errors
- * @param[in] size stack size
- * @param[in] capacity stack capacity
- * @return size validation status (ERROR_CODE)
- */
-ERROR_CODE SizeValid(size_t size, size_t capacity);
-
-/**
- * Checks pointer for errors
- * @param[in] pointer some pointer
- * @return pointer validation status (ERROR_CODE)
- */
-ERROR_CODE PointerValid(void* pointer);
-
-/**
- * Checks hash for errors
- * @param[in] data
- * @param[in] dataSize
- * @param[in] hash
- * @return hash validation status (ERROR_CODE)
- */
-ERROR_CODE HashValid(Stack_t* stackObject);
-
-/**
- * Checks canary for errors
- * @param[in] stackObject pointer to the stack object
- * @param[in] canary pointer to the canary
- * @return canary validation status (ERROR_CODE)
- */
-ERROR_CODE CanaryValid(Stack_t* stackObject, Stack_t* canary);
-//}------------------------------------------------------------------------------------------------
-
-#endif // STACK_STACK_H
+void stack_dump(const Stack *stack, Location location);
+#endif //STACK_STACK_H

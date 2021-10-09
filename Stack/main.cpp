@@ -1,20 +1,18 @@
-/**
- * @file main.cpp
- */
-
-#include <stdio.h>
-
+#include "stdio.h"
+#include "Logger.h"
 #include "Stack.h"
 
-int main(void)
-{
-    Stack_t (array); 
+const char* LOG_FILENAME = "stack.log";
 
-    StackDtor(array.self);
+int main(){
+    Stack stack = {};
 
-    StackDump(array.self, "", stdout, __LOCATION__);
+    stack_init(&stack);
 
-    StackCtor(array.self, "array");
+    STACK_DUMP(&stack);
+    
+    stack_free(&stack);
+    stack_free(&stack);
 
     return 0;
 }
