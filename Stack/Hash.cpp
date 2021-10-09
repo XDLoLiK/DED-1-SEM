@@ -15,8 +15,8 @@ Hash_t CalculateHash(void* data, size_t dataSize)
 {
     assert(data && dataSize >= 0 && "Invalid Data");
 
-    Hash_t * dataBuffer = nullptr;
-    size_t bufferSize = 0;
+    Hash_t* dataBuffer = nullptr;
+    size_t  bufferSize = 0;
 
     /// Extending the data size to the minimal data size
     if (dataSize < sizeof (Hash_t))
@@ -33,13 +33,16 @@ Hash_t CalculateHash(void* data, size_t dataSize)
     Hash_t hash = 0;
     Hash_t index = 0;
 
+    int pos = 0;
+
     while (bufferSize > 0) {
-        index = hash ^ *dataBuffer;
+        index = hash ^ dataBuffer[pos++];
         hash = PermutationTable(index);
 
         bufferSize -= sizeof (Hash_t);
-        dataBuffer += 1;
     }
+
+    free(dataBuffer);
 
     return hash;
 }

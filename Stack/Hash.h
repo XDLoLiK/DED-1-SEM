@@ -17,6 +17,8 @@
 
 typedef uint64_t Hash_t;
 
+const Hash_t NEUTRAL_HASH = 77777;
+
 /**
  * Permutation table which changes an input
  * hash using a certain rule

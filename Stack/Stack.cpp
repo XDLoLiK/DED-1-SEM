@@ -1,208 +1,473 @@
+/**
+ * @file Stack.cpp
+ */
+
 #include "Stack.h"
-#include "stdlib.h"
-#include "Stack_Private.h"
 
-const size_t MIN_STACK_SZ = 8;
-extern const size_t STACK_CANARY_SZ;
+/// Deacrese and increase capacity coefficients
+const size_t INCREMENT_COEFF = 2;
+const size_t DECREMENT_COEFF = 2;
 
-#ifdef STACK_META_INFORMATION
-STACK_ERROR stack_init_meta(Stack* stack, Location location){
-#else
-STACK_ERROR stack_init(Stack *stack){
-#endif
-    STACK_CHECK_NULL(stack);
+//{--------------------------------------------------------User-unfriendly-functions-------------------------------------------------------
+                                                                                                                                         //
+/**                                                                                                                                      //
+ * The user shall not have access to these                                                                                               //
+ */                                                                                                                                      //
+                                                                                                                                         //
+/**                                                                                                                                      //
+ * Increases stack object's capacity if possible                                                                                         //
+ * @param[in,out] stackObject pointer to the stack object                                                                                //
+ * @return error code (or no error)                                                                                                      //
+ */                                                                                                                                      //
+ERROR_CODE IncreaseCapacity(Stack_t* stackObject);                                                                                       //
+                                                                                                                                         //
+/**                                                                                                                                      //
+ * Decreases stack object's capacity if possible                                                                                         //
+ * @param[in,out] stackObject pointer to the stack object                                                                                //
+ * @return error code (or no error)                                                                                                      //
+ */                                                                                                                                      //
+ERROR_CODE DecreaseCapacity(Stack_t* stackObject);                                                                                       //       
+                                                                                                                                         //
+/**                                                                                                                                      //
+ * Checks realloc result before assignment                                                                                               //
+ * @param[in,out] buffer pointer to the buffer                                                                                           //
+ * @param[in] nElements number of elements in the buffer                                                                                 //
+ * @param[in] elemSize size of one element                                                                                               //
+ * @return realloc status (ERROR_CODE)                                                                                                   //
+ */                                                                                                                                      //
+ERROR_CODE SecureRealloc(StackElem_t** buffer, size_t nElements, size_t elemSize);                                                       //         
+                                                                                                                                         //
+/**                                                                                                                                      //
+ * Computes hash for current stack object state                                                                                          //
+ * @param[in,out] stackObject pointer to the stack object                                                                                //
+ * @return new hash values                                                                                                               //
+ */                                                                                                                                      //
+Hash_t GetHash(Stack_t* stackObject);                                                                                                    //
+//}----------------------------------------------------------------------------------------------------------------------------------------
 
-    if(stack_is_init(stack)){
-        return stack_log_error(STACK_REINIT, stack);
-    }
-    #ifdef STACK_META_INFORMATION
-        stack->location = location;
-    #endif
-    /**
-     * @brief Using malloc because of untrivial expression.
-     * @warning Do not forget sizeof(). It is malloc. 
-     * On bug case come here.
-     */
-    stack->raw_data = malloc(MIN_STACK_SZ * sizeof(stack_element_t) + STACK_CANARY_SZ * sizeof(canary_t));
-    if(stack->raw_data == NULL) {
-        return stack_log_error(STACK_BAD_ALLOC, stack);
-    }
 
-    stack->capacity = MIN_STACK_SZ;
-    stack->size = 0;
-    stack->data = (stack_element_t*)(stack->raw_data + STACK_CANARY_SZ / 2 * sizeof(canary_t));
 
-    stack_place_canary(stack);
-    stack_reHash(stack);
+//{--------------------------------------------------------Stack-methods-------------------------------------------------------------------
+                                                                                                                                         //
+static ERROR_CODE StackPush(Stack_t* stackObject, StackElem_t value)                                                                     //
+{                                                                                                                                        //
+    assert(stackObject != (Stack_t*)    POISON_VALUES::POINTER && stackObject && "Inapropriate stack object pointer");                   //                                          
+                                                                                                                                         //
+#if defined(VALIDATION_ACTIVE)                                                                                                           //
+                                                                                                                                         //
+    VALIDATE(stackObject, StackValid, StackDump);                                                                                        //
+                                                                                                                                         //
+#endif // VALIDATION_ACTIVE                                                                                                              //
+                                                                                                                                         //
+    if (IncreaseCapacity(stackObject->self) != NO_ERROR)                                                                                 //
+        RETURN(ALLOCATION_ERROR);                                                                                                        //
+                                                                                                                                         //
+    stackObject->data[stackObject->size++] = value;                                                                                      //
+                                                                                                                                         //
+#if defined(VALIDATION_ACTIVE)                                                                                                           //
+                                                                                                                                         //
+    stackObject->hash = GetHash(stackObject->self);                                                                                      //
+                                                                                                                                         //
+    VALIDATE(stackObject, StackValid, StackDump);                                                                                        //
+                                                                                                                                         //
+#endif // VALIDATION_ACTIVE                                                                                                              //
+                                                                                                                                         //
+    RETURN(NO_ERROR);                                                                                                                    //
+}                                                                                                                                        //
+                                                                                                                                         //
+                                                                                                                                         //
+static ERROR_CODE StackPop(Stack_t* stackObject)                                                                                         //
+{                                                                                                                                        //
+    assert(stackObject != (Stack_t*)    POISON_VALUES::POINTER && stackObject && "Inapropriate stack object pointer");                   //                                          
+                                                                                                                                         //                                                                                                                                                                                                                                                                               
+#if defined(VALIDATION_ACTIVE)                                                                                                           //
+                                                                                                                                         //
+    VALIDATE(stackObject, StackValid, StackDump);                                                                                        //
+                                                                                                                                         //
+#endif // VALIDATION_ACTIVE                                                                                                              //
+                                                                                                                                         //
+    if (stackObject->size <= 0)                                                                                                          //
+        RETURN(EMPTY_STACK_POP_ATTEMPT);                                                                                                 //
+                                                                                                                                         //
+    if (DecreaseCapacity(stackObject->self) != NO_ERROR)                                                                                 //
+        RETURN(ALLOCATION_ERROR);                                                                                                        //
+                                                                                                                                         //
+    stackObject->data[--stackObject->size] = (StackElem_t) POISON_VALUES::NUMBER;                                                        //
+                                                                                                                                         //
+#if defined(VALIDATION_ACTIVE)                                                                                                           //
+                                                                                                                                         //
+    stackObject->hash = GetHash(stackObject->self);                                                                                      //
+                                                                                                                                         //
+    VALIDATE(stackObject, StackValid, StackDump);                                                                                        //
+                                                                                                                                         //
+#endif // VALIDATION_ACTIVE                                                                                                              //
+                                                                                                                                         //
+    RETURN(NO_ERROR);                                                                                                                    //
+}                                                                                                                                        //
+                                                                                                                                         //
+                                                                                                                                         //
+static StackElem_t StackTop(Stack_t* stackObject)                                                                                        //
+{                                                                                                                                        //
+    assert(stackObject != (Stack_t*)    POISON_VALUES::POINTER && stackObject && "Inapropriate stack object pointer");                   //                                          
+                                                                                                                                         //
+#if defined(VALIDATION_ACTIVE)                                                                                                           //
+                                                                                                                                         //
+    VALIDATE(stackObject, StackValid, StackDump);                                                                                        //
+                                                                                                                                         //
+#endif // VALIDATION_ACTIVE                                                                                                              //
+                                                                                                                                         //
+    if (stackObject->size <= 0)                                                                                                          //
+        RETURN(EMPTY_STACK_TOP_ATTEMPT);                                                                                                 //
+                                                                                                                                         //
+    return stackObject->data[stackObject->size - 1];                                                                                     //
+}                                                                                                                                        //
+                                                                                                                                         //
+                                                                                                                                         //
+#if defined(VALIDATION_ACTIVE)                                                                                                           //
+                                                                                                                                         //
+static void StackDump(Stack_t* stackObject, const char* localName, FILE* destFile, Location_t location)                                  //
+{                                                                                                                                        //
+    assert(stackObject != (Stack_t*)    POISON_VALUES::POINTER && stackObject && "Inapropriate stack object pointer");                   //                                          
+    assert(destFile    != (FILE*)       POISON_VALUES::POINTER && destFile    && "Inapropriate stack object pointer");                   //
+    assert(localName   != (const char*) POISON_VALUES::POINTER && localName   && "Inapropriate stack object pointer");                   //
+                                                                                                                                         //
+    // dumping struct info and status                                                                                                    //
+    const char* stackStatus = (StackValid(stackObject->self)) ? "ok" : "ERROR!";                                                         //
+                                                                                                                                         //
+    fprintf(destFile, "\nstack<StackElem_t> \"%s\" [%p] (%s) %s: %s(%d) aka \"%s\":\n\n",                                                //
+            stackObject->name, stackObject->self, stackStatus, location.file, location.function, location.line, localName);              //
+                                                                                                                                         //
+    // dumping size and capacity                                                                                                         //
+    const char* sizeStatus = (SizeValid(stackObject->size, stackObject->capacity) == NO_ERROR) ? "ok" : "ERROR!";                        //
+    const char* capacityStatus = sizeStatus;                                                                                             //
+                                                                                                                                         //
+    fprintf(destFile,                                                                                                                    //
+            "\tsize_t size          = %-10zd (%s)\n"                                                                                     //
+            "\tsize_t capacity      = %-10zd (%s)\n",                                                                                    //
+            stackObject->size, sizeStatus, stackObject->capacity, capacityStatus);                                                       //
+                                                                                                                                         //
+    // dumping self-pointer                                                                                                              //
+    const char* selfStatus = (PointerValid(stackObject->self) == NO_ERROR) ? "ok" : "ERROR!";                                            //
+                                                                                                                                         //
+    fprintf(destFile,                                                                                                                    //
+            "\tstack* self          = %-10llu (%s)\n",                                                                                   //
+            stackObject->self, selfStatus);                                                                                              //
+                                                                                                                                         //
+    // dumping canaries                                                                                                                  //
+    const char* leftCanaryStatus  = (CanaryValid(stackObject->self, stackObject->canaryLeft)  == NO_ERROR) ? "ok" : "ERROR!";            //
+    const char* rightCanaryStatus = (CanaryValid(stackObject->self, stackObject->canaryRight) == NO_ERROR) ? "ok" : "ERROR!";            //
+                                                                                                                                         //
+    fprintf(destFile,                                                                                                                    //
+            "\tCanary_t canaryLeft  = %-10llu (%s)\n"                                                                                    //
+            "\tCanary_t canaryRight = %-10llu (%s)\n",                                                                                   //
+            stackObject->canaryLeft, leftCanaryStatus, stackObject->canaryRight, rightCanaryStatus);                                     //
+                                                                                                                                         //
+    // dumping hash                                                                                                                      //
+    const char* hashStatus = (HashValid(stackObject->self) == NO_ERROR) ? "ok" : "ERROR!";                                               //
+                                                                                                                                         //
+    fprintf(destFile,                                                                                                                    //
+            "\tHash_t hash          = %-10llu (%s)\n"                                                                                    //
+            "\tCorrect hash         = %-10llu\n\n",                                                                                      //
+            stackObject->hash, hashStatus, GetHash(stackObject->self));                                                                  //
+                                                                                                                                         //
+    // dumping data array status                                                                                                         //
+    bool dataIsOk = true;                                                                                                                //
+                                                                                                                                         //
+    for (int i = 0; i < stackObject->size; ++i)                                                                                          //
+        dataIsOk = NumberValid(stackObject->data[i]) == NO_ERROR;                                                                        //
+                                                                                                                                         //
+    const char* dataStatus = (dataIsOk) ? "ok" : "ERROR!";                                                                               //
+                                                                                                                                         //
+    fprintf(destFile,                                                                                                                    //
+            "\tStackElem_t* data [%p] (%s) {\n\n",                                                                                       //
+            stackObject->data, dataStatus);                                                                                              //
+                                                                                                                                         //
+    // dumping pushed data elements                                                                                                      //
+    const char* valueStatus = nullptr;                                                                                                   //
+                                                                                                                                         //
+    for (int i = 0; i < stackObject->size; ++i) {                                                                                        //
+        valueStatus = (NumberValid(stackObject->data[i]) == NO_ERROR) ? "ok" : "ERROR!";                                                 //
+        fprintf(destFile,                                                                                                                //
+                "\t\t*[%d] = %llu (%s);\n", i, stackObject->data[i], valueStatus);                                                       //
+    }                                                                                                                                    //
+                                                                                                                                         //
+    // dumping unused data elements                                                                                                      //
+    for (int i = stackObject->size; i < stackObject->capacity; ++i) {                                                                    //
+        valueStatus = (NumberValid(stackObject->data[i]) == NO_ERROR) ? "ok" : "ERROR!";                                                 //
+        fprintf(destFile,                                                                                                                //
+                "\t\t[%d] = %llu;\n", i, stackObject->data[i], valueStatus);                                                             //
+    }                                                                                                                                    //
+                                                                                                                                         //
+    fprintf(destFile, "\t}\n\n");                                                                                                        //
+}                                                                                                                                        //
+                                                                                                                                         //
+#endif // VALIDATION_ACTIVE                                                                                                              //
+//}----------------------------------------------------------------------------------------------------------------------------------------
 
-    STACK_CHECK(stack)
-    return STACK_ERRNO;
-}
 
-//----------------------------------------------------------------------------------------------------------------------
+//}--------------------------------------------------------Construction-and-destruction-fuctions-------------------------------------------
+                                                                                                                                         //
+ERROR_CODE StackCtor(Stack_t* stackObject, const char* name)                                                                             //
+{                                                                                                                                        //
+    assert(stackObject && stackObject != (Stack_t*)    POISON_VALUES::POINTER && "Invalid stack object pointer");                        //
+    assert(name        && name        != (const char*) POISON_VALUES::POINTER && "Invalid  name pointer");                               //
+                                                                                                                                         //
+    if (stackObject == nullptr || name == nullptr)                                                                                       //
+        RETURN(INITIALIZATION_ERROR);                                                                                                    //
+                                                                                                                                         //
+    // defining attributes                                                                                                               //
+    stackObject->size = 0;                                                                                                               //
+    stackObject->name = name;                                                                                                            //
+    stackObject->self = stackObject;                                                                                                     //
+                                                                                                                                         //
+    if (SecureRealloc(&stackObject->data, 1, sizeof (StackElem_t)) == NO_ERROR)                                                          //
+        stackObject->capacity = 1;                                                                                                       //
+    else                                                                                                                                 //
+        RETURN(ALLOCATION_ERROR);                                                                                                        //
+                                                                                                                                         //
+    stackObject->data[0] = 0;                                                                                                            //
+                                                                                                                                         //
+    // setting up the canaries                                                                                                           //
+                                                                                                                                         //
+    assert(&StackPop && &StackPush && &StackDump && &StackTop && "Invalid function pointer");                                            //
+                                                                                                                                         //
+    // defining methods                                                                                                                  //
+    stackObject->pop  = &StackPop;                                                                                                       //
+    stackObject->top  = &StackTop;                                                                                                       //
+    stackObject->push = &StackPush;                                                                                                      //
+    stackObject->dump = &StackDump;                                                                                                      //
+                                                                                                                                         //                                                                                                                                         
+#if defined(VALIDATION_ACTIVE)                                                                                                           //
+                                                                                                                                         //                                                                                                                                                                                                                               
+    // setting canaries                                                                                                                  //
+    stackObject->canaryLeft  = (Canary_t) stackObject->self;                                                                             //
+    stackObject->canaryRight = (Canary_t) stackObject->self;                                                                             //
+                                                                                                                                         //
+    // calculatig hash                                                                                                                   //
+    stackObject->hash = GetHash(stackObject->self);                                                                                      //
+                                                                                                                                         //
+    VALIDATE(stackObject, StackValid, StackDump);                                                                                        //
+                                                                                                                                         //
+#endif // VALIDATION_ACTIVE                                                                                                              //                                                                                                                                                                                                                                                                            
+    RETURN(NO_ERROR);                                                                                                                    //
+}                                                                                                                                        //
+                                                                                                                                         //                       
+                                                                                                                                         //
+Hash_t GetHash(Stack_t* stackObject)                                                                                                     //
+{                                                                                                                                        //
+    assert(stackObject && stackObject != (Stack_t*) POISON_VALUES::POINTER && "Invalid stack object pointer");                           //
+                                                                                                                                         //
+    Hash_t oldHash    = stackObject->hash;                                                                                               //
+    stackObject->hash = NEUTRAL_HASH;                                                                                                    //
+                                                                                                                                         //
+    Hash_t structHash = CalculateHash(stackObject->self, sizeof stackObject);                                                            //
+    Hash_t dataHash   = CalculateHash(stackObject->data, sizeof (StackElem_t) * stackObject->capacity);                                  //
+                                                                                                                                         //
+    stackObject->hash = oldHash;                                                                                                         //
+                                                                                                                                         //
+    return structHash ^ dataHash;                                                                                                        //
+}                                                                                                                                        //
+                                                                                                                                         //
+                                                                                                                                         //
+void StackDtor(Stack_t* stackObject)                                                                                                     //
+{                                                                                                                                        //
+    assert(stackObject && stackObject != (Stack_t*) POISON_VALUES::POINTER && "Invalid pointer");                                        //
+                                                                                                                                         //
+#if defined(VALIDATION_ACTIVE)                                                                                                           //
+                                                                                                                                         //
+    VALIDATE(stackObject, StackValid, StackDump);                                                                                        //
+                                                                                                                                         //
+    stackObject->canaryLeft  = (Canary_t)  POISON_VALUES::NUMBER;                                                                        //
+    stackObject->canaryRight = (Canary_t)  POISON_VALUES::NUMBER;                                                                        //
+    stackObject->hash        = (Hash_t)    POISON_VALUES::NUMBER;                                                                        //
+                                                                                                                                         //
+#endif // VALIDATION_ACTIVE                                                                                                              //
+                                                                                                                                         //
+    // Poisoning the values                                                                                                              //
+    for (int i = 0; i < stackObject->size; ++i) {                                                                                        //
+        stackObject->data[i] = (StackElem_t) POISON_VALUES::NUMBER;                                                                      //
+    }                                                                                                                                    //
+                                                                                                                                         //
+    // freeing allocated memory                                                                                                          //
+    free(stackObject->data);                                                                                                             //
+                                                                                                                                         //
+    //destroying attributes                                                                                                              //
+    stackObject->name        = (char*)        POISON_VALUES::POINTER;                                                                    //
+    stackObject->data        = (StackElem_t*) POISON_VALUES::POINTER;                                                                    //
+    stackObject->self        = (Stack_t*)     POISON_VALUES::POINTER;                                                                    //
+    stackObject->size        = (size_t)       POISON_VALUES::NUMBER;                                                                     //
+    stackObject->capacity    = (size_t)       POISON_VALUES::NUMBER;                                                                     //
+                                                                                                                                         //
+    // destroying methods                                                                                                                //
+    stackObject->top  = (StackElem_t (*)(stack*))                          POISON_VALUES::POINTER;                                       //
+    stackObject->pop  = (ERROR_CODE  (*)(stack*))                          POISON_VALUES::POINTER;                                       //
+    stackObject->push = (ERROR_CODE  (*)(stack*, StackElem_t))             POISON_VALUES::POINTER;                                       //
+    stackObject->dump = (void (*)(stack*, const char*, FILE*, Location_t)) POISON_VALUES::POINTER;                                       //
+}                                                                                                                                        //
+                                                                                                                                         //
+                                                                                                                                         //
+ERROR_CODE StackNew(Stack_t** stackObject_ptr, const char* name)                                                                         //
+{                                                                                                                                        //
+    assert(stackObject_ptr && name && "Stack object initialization failed");                                                             //
+                                                                                                                                         //
+    *stackObject_ptr = (Stack_t*) calloc(1, sizeof (Stack_t));                                                                           //
+                                                                                                                                         //
+    return StackCtor(*stackObject_ptr, name);                                                                                            //
+}                                                                                                                                        //
+                                                                                                                                         //
+                                                                                                                                         //
+void StackDelete(Stack_t** stackObject_ptr)                                                                                              //
+{                                                                                                                                        //
+    assert(stackObject_ptr && "Inaproppriate pointer");                                                                                  //
+                                                                                                                                         //
+    StackDtor(*stackObject_ptr);                                                                                                         //
+    free(*stackObject_ptr);                                                                                                              //
+}                                                                                                                                        //
+//}----------------------------------------------------------------------------------------------------------------------------------------
 
-void stack_free(Stack *stack){
-    if(stack == NULL) return;
-    if(stack->raw_data != NULL){
-        free(stack->raw_data);
-        stack->raw_data = (stack_element_t*)13;
-        stack->data = NULL;
-        stack->size = 0;
-        stack->capacity = 0;
 
-#if STACK_PROTECTION_LEVEL & STACK_HASH_CHECK
-        stack->infoHash = 0;
-        stack->dataHash = 0;
-#endif
+//{--------------------------------------------------------Validation-functions------------------------------------------------------------
+                                                                                                                                         //
+bool StackValid(Stack_t* stackObject)                                                                                                    //
+{                                                                                                                                        //
+    assert(stackObject && "Inapropriate pointer");                                                                                       //
+                                                                                                                                         //
+    bool validator = true;                                                                                                               //
+                                                                                                                                         //
+    if (VALIDATION_DEPTH >= 1) {                                                                                                         //
+                                                                                                                                         //
+        validator = (PointerValid((void*) stackObject->top)  == NO_ERROR &&                                                              //
+                     PointerValid((void*) stackObject->pop)  == NO_ERROR &&                                                              //
+                     PointerValid((void*) stackObject->push) == NO_ERROR &&                                                              //
+                     PointerValid((void*) stackObject->dump) == NO_ERROR &&                                                              //
+                     PointerValid((void*) stackObject->self) == NO_ERROR &&                                                              //
+                     PointerValid((void*) stackObject->name) == NO_ERROR &&                                                              //
+                     PointerValid((void*) stackObject->data) == NO_ERROR &&                                                              //
+                     SizeValid(stackObject->size, stackObject->capacity) == NO_ERROR);                                                   //
+    }                                                                                                                                    //
+                                                                                                                                         //
+    if (VALIDATION_DEPTH >= 2) {                                                                                                         //
+        validator = (CanaryValid(stackObject->self, stackObject->canaryLeft)  == NO_ERROR &&                                             //
+                     CanaryValid(stackObject->self, stackObject->canaryRight) == NO_ERROR);                                              //
+    }                                                                                                                                    //
+                                                                                                                                         //
+    if (VALIDATION_DEPTH >= 3) {                                                                                                         //
+        validator = (HashValid(stackObject) == NO_ERROR);                                                                                //
+    }                                                                                                                                    //
+                                                                                                                                         //
+    return validator;                                                                                                                    //
+}                                                                                                                                        //
+                                                                                                                                         //
+                                                                                                                                         //
+ERROR_CODE NumberValid(StackElem_t value)                                                                                                //
+{                                                                                                                                        //
+    if (value == (StackElem_t) POISON_VALUES::NUMBER)                                                                                    //
+        return POISON_NUMBER;                                                                                                            //
+                                                                                                                                         //
+    return NO_ERROR;                                                                                                                     //
+}                                                                                                                                        //
+                                                                                                                                         //
+                                                                                                                                         //
+ERROR_CODE SizeValid(size_t size, size_t capacity)                                                                                       //
+{                                                                                                                                        //
+    if (size > capacity)                                                                                                                 //
+        return CAPACITY_ERROR;                                                                                                           //
+                                                                                                                                         //
+    return NO_ERROR;                                                                                                                     //
+}                                                                                                                                        //
+                                                                                                                                         //
+                                                                                                                                         //
+ERROR_CODE PointerValid(void* pointer)                                                                                                   //
+{                                                                                                                                        //
+    if (pointer == nullptr)                                                                                                              //
+        return POINTER_IS_NULL;                                                                                                          //
+    else if (pointer == (void*) POISON_VALUES::POINTER)                                                                                  //
+        return POISON_POINTER;                                                                                                           //
+                                                                                                                                         //
+    return NO_ERROR;                                                                                                                     //
+}                                                                                                                                        //
+                                                                                                                                         //
+                                                                                                                                         //
+ERROR_CODE HashValid(Stack_t* stackObject)                                                                                               //
+{                                                                                                                                        //
+    assert(stackObject != (Stack_t*)    POISON_VALUES::POINTER && stackObject && "Inapropriate stack object pointer");                   //                                          
+                                                                                                                                         //
+    Hash_t oldHash     = stackObject->hash;                                                                                              //
+    stackObject->hash  = NEUTRAL_HASH;                                                                                                   //
+    Hash_t currentHash = GetHash(stackObject->self);                                                                                     //
+    stackObject->hash  = oldHash;                                                                                                        //
+                                                                                                                                         //
+    if (oldHash != currentHash)                                                                                                          //
+        return INVALID_HASH;                                                                                                             //
+                                                                                                                                         //
+    return NO_ERROR;                                                                                                                     //
+}                                                                                                                                        //
+                                                                                                                                         //
+                                                                                                                                         //
+ERROR_CODE CanaryValid(Stack_t* stackObject, Canary_t canary)                                                                            //
+{                                                                                                                                        //
+    assert(stackObject != (Stack_t*)    POISON_VALUES::POINTER && stackObject && "Inapropriate stack object pointer");                   //
+                                                                                                                                         //
+    if ((Canary_t) stackObject->self != canary)                                                                                          //
+        return CANARY_ACCESSED;                                                                                                          //
+                                                                                                                                         //
+    return NO_ERROR;                                                                                                                     //
+}                                                                                                                                        //
+//}----------------------------------------------------------------------------------------------------------------------------------------
 
-    }
-    else{
-        stack_log_error(STACK_REFREE, stack);
-    }
-    return;
-}
 
-//----------------------------------------------------------------------------------------------------------------------
-
-STACK_ERROR stack_get(Stack *stack, stack_element_t *value){
-    STACK_CHECK(stack)
-    LOG_ASSERT(value != NULL);
-
-    if(stack->size == 0){
-        return stack_log_error(STACK_EMPTY_GET, stack);
-    }
-
-    *value = stack->data[stack->size - 1];
-    return STACK_ERRNO;
-}
-
-//----------------------------------------------------------------------------------------------------------------------
-
-STACK_ERROR stack_pop(Stack *stack){
-    STACK_CHECK(stack)
-
-    if(stack->size == 0){
-        return stack_log_error(STACK_EMPTY_POP, stack);
-    }
-
-    stack->data[--stack->size] = 0;     //Clears value and moves size to previous position. Prefix decrement is important.
-    stack_reHash(stack);
-
-    if(4 * stack->size < stack->capacity && stack->capacity > 4 * MIN_STACK_SZ && stack->reserved <= stack->capacity / 2)
-        return stack_realloc(stack, stack->capacity / 2);
-
-    STACK_CHECK(stack)
-    return STACK_ERRNO;
-}
-
-//----------------------------------------------------------------------------------------------------------------------
-
-STACK_ERROR stack_push(Stack *stack, stack_element_t val){
-    STACK_CHECK(stack)
-    STACK_ERROR error = STACK_ERRNO;
-    if(stack->size == stack->capacity - 1){             //Expanding stack
-        error =  stack_realloc(stack, stack->capacity * 2);
-        if(error != STACK_ERRNO){
-            return error;
-        }
-    }
-
-    stack->data[stack->size++] = val;
-
-    stack_reHash(stack);
-    STACK_CHECK(stack)
-    return error;
-}
-
-//----------------------------------------------------------------------------------------------------------------------
-
-void stack_dump(const Stack *stack, Location location){
-    LOG_MESSAGE_F(DEBUG, "Dumping variable \"%s\" in \"%s(%i)\" in file \"%s\":\n", location.var_name, location.func, location.line, location.filename);
-    LOG_MESSAGE_F(DEBUG, "\n");
-    if (stack == NULL){
-        LOG_MESSAGE_F(DEBUG,"Stack [%p];", stack);
-        return;
-    }
-#ifdef STACK_META_INFORMATION
-    LOG_MESSAGE_F(DEBUG,"Stack \"%s\" born in \"%s(%i)\" in file: \"%s\" [%p]\n", stack->location.var_name, stack->location.func, stack->location.line , stack->location.filename, stack);
-#else
-    LOG_DEBUG_F("Stack [%p]{\n", stack);
-#endif
-    #if STACK_PROTECTION_LEVEL & STACK_CANARY_CHECK
-        extern const canary_t STACK_CANARY_VALUE;
-        canary_t local_canary_value = STACK_CANARY_VALUE ^ (canary_t)stack;
-        LOG_MESSAGE_F(DEBUG, "\t.canary_beg = ");
-        LOG_MESSAGE_F(NO_CAP, "0x%0llx", stack->canary_beg);
-        LOG_MESSAGE_F(NO_CAP, "\t\t(%s),\n", (stack->canary_beg == local_canary_value ? "ok" : "ERROR"));
-    #endif
-
-    LOG_MESSAGE_F(DEBUG, "\t.size = %zu,\n", stack->size);
-    LOG_MESSAGE_F(DEBUG, "\t.capacity = %zu,\n", stack->capacity);
-
-    #if STACK_PROTECTION_LEVEL & STACK_HASH_CHECK
-        LOG_MESSAGE_F(DEBUG, "\t.infoHash = 0x%0x\t\t\t\t(%s)\n", stack->infoHash,
-                      (stack->infoHash == stack_info_hash(stack) ? "ok" : "ERROR"));
-        LOG_MESSAGE_F(DEBUG, "\t.dataHash = 0x%0x\t\t\t\t(%s)\n", stack->dataHash,
-                      (stack->dataHash == stack_data_hash(stack) ? "ok" : "ERROR"));
-    #endif
-
-    LOG_MESSAGE_F(DEBUG, "\t.raw_data = %p,\n", stack->raw_data);
-    LOG_MESSAGE_F(DEBUG, "\t.data[%p] = {\n", stack->data);
-
-    if( stack->data != NULL && stack->raw_data != NULL //Check if stack->data correct
-        #if STACK_PROTECTION_LEVEL & STACK_HASH_CHECK
-        && stack->infoHash == stack_info_hash(stack)
-        #endif
-        )
-    {
-//###################################### Data dumping begin ############################################################
-        #if STACK_PROTECTION_LEVEL & STACK_CANARY_CHECK
-            LOG_MESSAGE_F(DEBUG, "\t\t.canary_beg= ");
-            LOG_MESSAGE_F(NO_CAP, "0x%0llx", *(canary_t*)stack->raw_data);
-            LOG_MESSAGE_F(NO_CAP, "\t(%s),\n", (stack->canary_end == local_canary_value ? "ok" : "ERROR"));
-        #endif
-
-        for (size_t i = 0; i < stack->capacity; ++i){
-            LOG_MESSAGE_F(DEBUG, "\t\t[%03zu] = ", i);
-            LOG_MESSAGE_F(NO_CAP, stack_element_format, stack->data[i]);
-            if(i == stack->size - 1)
-                LOG_MESSAGE_F(NO_CAP, " (<--LAST)");
-            LOG_MESSAGE_F(NO_CAP, "\n");
-        }
-
-        #if STACK_PROTECTION_LEVEL & STACK_CANARY_CHECK
-            LOG_MESSAGE_F(DEBUG, "\t\t.canary_end = ");
-            LOG_MESSAGE_F(NO_CAP, "%0x%0llx", *(canary_t*)(stack->raw_data + stack->capacity * sizeof(stack_element_t) + sizeof(canary_t)));
-            LOG_MESSAGE_F(NO_CAP, "\t(%s),\n", (stack->canary_end == local_canary_value ? "ok" : "ERROR"));
-        #endif
-//###################################### Data dumping end ##############################################################
-    }
-    else{
-        LOG_MESSAGE_F(DEBUG, "\tUnable to dump stack. Info is corrupted\n}\n");
-    }
-    LOG_MESSAGE_F(DEBUG, "\t}\n");
-
-#if STACK_PROTECTION_LEVEL & STACK_CANARY_CHECK
-    LOG_MESSAGE_F(DEBUG, "\t.canary_end = ");
-    LOG_MESSAGE_F(NO_CAP, "%0x%0llx", stack->canary_end);
-    LOG_MESSAGE_F(NO_CAP, "\t\t(%s),\n", (stack->canary_end == local_canary_value ? "ok" : "ERROR"));
-#endif
-
-    LOG_MESSAGE_F(DEBUG, "}\n");
-
-}
-
-//----------------------------------------------------------------------------------------------------------------------
-
-STACK_ERROR stack_reserve(Stack *stack, size_t to_reserve){
-    STACK_CHECK(stack)
-    if(stack->reserved > to_reserve){
-        stack->reserved = to_reserve;
-        stack_reHash(stack);
-    }
-    if(stack->reserved > stack->capacity){
-        return stack_realloc(stack, stack->reserved);
-    }
-    STACK_CHECK(stack);
-    return STACK_ERRNO;
-}
+//{--------------------------------------------------------Memory-realloc-functions--------------------------------------------------------
+                                                                                                                                         //
+ERROR_CODE SecureRealloc(StackElem_t** buffer, size_t nElements, size_t elemSize)                                                        //
+{                                                                                                                                        //           
+    assert(buffer && "Inapropriate buffer pointer");                                                                                     //
+                                                                                                                                         //
+    StackElem_t* dataTmp = (StackElem_t*) realloc(*buffer, nElements * elemSize);                                                        //
+                                                                                                                                         //
+    if (dataTmp)                                                                                                                         //
+        *buffer = dataTmp;                                                                                                               //
+    else                                                                                                                                 //
+        return ALLOCATION_ERROR;                                                                                                         //
+                                                                                                                                         //
+    return NO_ERROR;                                                                                                                     //
+}                                                                                                                                        //
+                                                                                                                                         //
+                                                                                                                                         //
+ERROR_CODE IncreaseCapacity(Stack_t* stackObject)                                                                                        //
+{                                                                                                                                        //
+    assert(stackObject != (Stack_t*)    POISON_VALUES::POINTER && stackObject && "Inapropriate stack object pointer");                   //                                          
+                                                                                                                                         //
+    if (stackObject->size == stackObject->capacity) {                                                                                    //
+                                                                                                                                         //
+        if (SecureRealloc(&stackObject->data, stackObject->capacity * INCREMENT_COEFF, sizeof (StackElem_t)) == NO_ERROR)                //
+            stackObject->capacity *= INCREMENT_COEFF;                                                                                    //
+        else                                                                                                                             //
+            return ALLOCATION_ERROR;                                                                                                     //                                                                                                                       
+    }                                                                                                                                    //
+                                                                                                                                         //
+    for (size_t i = stackObject->size; i < stackObject->capacity; ++i) {                                                                 //
+        stackObject->data[i] = (StackElem_t) POISON_VALUES::NUMBER;                                                                      //
+    }                                                                                                                                    //
+                                                                                                                                         //
+    return NO_ERROR;                                                                                                                     //
+}                                                                                                                                        //
+                                                                                                                                         //
+                                                                                                                                         //
+ERROR_CODE DecreaseCapacity(Stack_t* stackObject)                                                                                        //
+{                                                                                                                                        //
+    assert(stackObject != (Stack_t*)    POISON_VALUES::POINTER && stackObject && "Inapropriate stack object pointer");                   //                                          
+                                                                                                                                         //
+    /// a point when it's time to decrease the capacity                                                                                  //
+    size_t decrementPoint = stackObject->capacity / 4;                                                                                   //
+                                                                                                                                         //
+    if (stackObject->size <= decrementPoint) {                                                                                           //
+                                                                                                                                         //
+        if (SecureRealloc(&stackObject->data, stackObject->capacity / DECREMENT_COEFF, sizeof (StackElem_t)) == NO_ERROR)                //
+            stackObject->capacity /= DECREMENT_COEFF;                                                                                    //
+        else                                                                                                                             //
+            return ALLOCATION_ERROR;                                                                                                     //                                                                                                                                
+    }                                                                                                                                    //
+                                                                                                                                         //
+    return NO_ERROR;                                                                                                                     //
+}                                                                                                                                        //
+//}----------------------------------------------------------------------------------------------------------------------------------------
