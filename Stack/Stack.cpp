@@ -229,15 +229,18 @@ ERROR_CODE StackCtor(Stack_t* stackObject, const char* name)                    
                                                                                                                                          //
     // setting up the canaries                                                                                                           //
                                                                                                                                          //
-    assert(&StackPop && &StackPush && &StackDump && &StackTop && "Invalid function pointer");                                            //
+    assert(&StackPop && &StackPush && &StackTop && "Invalid function pointer");                                                          //
                                                                                                                                          //
     // defining methods                                                                                                                  //
     stackObject->pop  = &StackPop;                                                                                                       //
     stackObject->top  = &StackTop;                                                                                                       //
     stackObject->push = &StackPush;                                                                                                      //
-    stackObject->dump = &StackDump;                                                                                                      //
                                                                                                                                          //                                                                                                                                         
 #if defined(VALIDATION_ACTIVE)                                                                                                           //
+                                                                                                                                         //
+    // dump func                                                                                                                         //
+    assert(&StackDump);                                                                                                                  //
+    stackObject->dump = &StackDump;                                                                                                      //
                                                                                                                                          //                                                                                                                                                                                                                               
     // setting canaries                                                                                                                  //
     stackObject->canaryLeft  = (Canary_t) stackObject->self;                                                                             //
@@ -252,6 +255,8 @@ ERROR_CODE StackCtor(Stack_t* stackObject, const char* name)                    
     RETURN(NO_ERROR);                                                                                                                    //
 }                                                                                                                                        //
                                                                                                                                          //                       
+                                                                                                                                         //
+#if defined(VALIDATION_ACTIVE)                                                                                                           //
                                                                                                                                          //
 Hash_t GetHash(Stack_t* stackObject)                                                                                                     //
 {                                                                                                                                        //
@@ -268,6 +273,8 @@ Hash_t GetHash(Stack_t* stackObject)                                            
     return structHash ^ dataHash;                                                                                                        //
 }                                                                                                                                        //
                                                                                                                                          //
+#endif // VALIDATION_ACTIVE                                                                                                              //
+                                                                                                                                         //
                                                                                                                                          //
 void StackDtor(Stack_t* stackObject)                                                                                                     //
 {                                                                                                                                        //
@@ -277,9 +284,10 @@ void StackDtor(Stack_t* stackObject)                                            
                                                                                                                                          //
     VALIDATE(stackObject, StackValid, StackDump);                                                                                        //
                                                                                                                                          //
-    stackObject->canaryLeft  = (Canary_t)  POISON_VALUES::NUMBER;                                                                        //
-    stackObject->canaryRight = (Canary_t)  POISON_VALUES::NUMBER;                                                                        //
-    stackObject->hash        = (Hash_t)    POISON_VALUES::NUMBER;                                                                        //
+    stackObject->canaryLeft  = (Canary_t)                                          POISON_VALUES::NUMBER;                                //
+    stackObject->canaryRight = (Canary_t)                                          POISON_VALUES::NUMBER;                                //
+    stackObject->hash        = (Hash_t)                                            POISON_VALUES::NUMBER;                                //
+    stackObject->dump        = (void (*) (stack*, const char*, FILE*, Location_t)) POISON_VALUES::POINTER;                               //
                                                                                                                                          //
 #endif // VALIDATION_ACTIVE                                                                                                              //
                                                                                                                                          //
@@ -302,7 +310,6 @@ void StackDtor(Stack_t* stackObject)                                            
     stackObject->top  = (StackElem_t (*)(stack*))                          POISON_VALUES::POINTER;                                       //
     stackObject->pop  = (ERROR_CODE  (*)(stack*))                          POISON_VALUES::POINTER;                                       //
     stackObject->push = (ERROR_CODE  (*)(stack*, StackElem_t))             POISON_VALUES::POINTER;                                       //
-    stackObject->dump = (void (*)(stack*, const char*, FILE*, Location_t)) POISON_VALUES::POINTER;                                       //
 }                                                                                                                                        //
                                                                                                                                          //
                                                                                                                                          //
@@ -327,6 +334,8 @@ void StackDelete(Stack_t** stackObject_ptr)                                     
 
 
 //{--------------------------------------------------------Validation-functions------------------------------------------------------------
+                                                                                                                                         //
+#if defined(VALIDATION_ACTIVE)                                                                                                           //
                                                                                                                                          //
 bool StackValid(Stack_t* stackObject)                                                                                                    //
 {                                                                                                                                        //
@@ -413,6 +422,9 @@ ERROR_CODE CanaryValid(Stack_t* stackObject, Canary_t canary)                   
                                                                                                                                          //
     return NO_ERROR;                                                                                                                     //
 }                                                                                                                                        //
+                                                                                                                                         //
+#endif // VALIDATION_ACTIVE                                                                                                              //
+                                                                                                                                         //
 //}----------------------------------------------------------------------------------------------------------------------------------------
 
 

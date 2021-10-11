@@ -71,7 +71,8 @@ typedef struct stack {
     StackElem_t (*top)  (stack* self)                                                = nullptr;
     ERROR_CODE  (*pop)  (stack* self)                                                = nullptr;
     ERROR_CODE  (*push) (stack* self, StackElem_t value)                             = nullptr;
-    void        (*dump) (stack* self, const char* localName, FILE* dest, Location_t) = nullptr;
+    
+    ON_DEBUG( void (*dump) (stack* self, const char* localName, FILE* dest, Location_t) = nullptr;)
 
 // Hash
     ON_DEBUG(Hash_t hash = NEUTRAL_HASH);
@@ -101,6 +102,8 @@ static ERROR_CODE StackPop(Stack_t* stackObject);
  */
 static ERROR_CODE StackPush(Stack_t* stackObject, StackElem_t value);
 
+ON_DEBUG(
+
 /**
  * Dumps stack info into a file
  * @param[in] stackObject pointer to the stack object
@@ -116,6 +119,8 @@ static void StackDump(Stack_t* stackObject, const char* localName, FILE* destFil
  * @return top element
  */
 static StackElem_t StackTop(Stack_t* stackObject);
+
+) // ON_DEBUG
 
 //}------------------------------------------------------------------------------------------------
 
@@ -158,6 +163,7 @@ void StackDelete(Stack_t** stackObject_ptr);
  * Data protection related functions
  */
 
+ON_DEBUG(
 
 /**
  * Checks stack for errors
@@ -204,6 +210,8 @@ ERROR_CODE HashValid(Stack_t* stackObject);
  * @return canary validation status (ERROR_CODE)
  */
 ERROR_CODE CanaryValid(Stack_t* stackObject, Canary_t canary);
+
+) // ON_DEBUG
 
 //}------------------------------------------------------------------------------------------------
 

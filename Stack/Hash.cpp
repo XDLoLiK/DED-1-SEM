@@ -11,6 +11,7 @@ Hash_t PermutationTable(Hash_t index)
     return index * 2 + 9;
 }
 
+
 Hash_t CalculateHash(void* data, size_t dataSize)
 {
     assert(data && dataSize >= 0 && "Invalid Data");

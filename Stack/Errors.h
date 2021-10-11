@@ -6,6 +6,7 @@
 #define ERRORS_H
 
 #include "Location.h"
+
 #include <stdio.h>
 
 //}------------------------------------------Error-logs--------------------------------------------
@@ -26,11 +27,11 @@ do {                                                                            
                                                                                             \
     if ((ErrorName) != NO_ERROR) {                                                          \
         printf("\n=========================ERROR=OCCURRED!=======================\n\n");    \
-        printf(">>> ERROR CODE: %d\n", ErrorName);                                          \
-        printf(">>> REASON:     %s\n", #ErrorName);                                         \
-        printf(">>> FILE:       %s\n", location.file);                                      \
+        printf(">>> ERROR CODE: %d\n",   ErrorName);                                        \
+        printf(">>> REASON:     %s\n",   #ErrorName);                                       \
+        printf(">>> FILE:       %s\n",   location.file);                                    \
         printf(">>> FUNCTION:   %s()\n", location.function);                                \
-        printf(">>> LINE:       %d\n", location.line);                                      \
+        printf(">>> LINE:       %d\n",   location.line);                                    \
         printf("\n===============================================================\n\n");    \
     }                                                                                       \
 }                                                                                           \

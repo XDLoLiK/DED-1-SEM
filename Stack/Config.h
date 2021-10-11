@@ -9,7 +9,7 @@ typedef uint64_t StackElem_t;
 typedef size_t   Canary_t;
 
 
-#define VALIDATION_ACTIVE
+#define VALIDATION_INACTIVE
 
 
 #ifdef VALIDATION_ACTIVE

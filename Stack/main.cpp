@@ -20,7 +20,7 @@ int main(void)
         array.push(array.self, i);
     }
 
-    array.dump(array.self, "", stdout, __LOCATION__);
+    // array.dump(array.self, "", stdout, __LOCATION__);
 
     for (int i = 0; i < 100; ++i) {
         array.pop(array.self);
