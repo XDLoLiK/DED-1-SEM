@@ -49,7 +49,7 @@ Hash_t GetHash(Stack_t* stackObject);                                           
 
 //{--------------------------------------------------------Stack-methods-------------------------------------------------------------------
                                                                                                                                          //
-static ERROR_CODE StackPush(Stack_t* stackObject, StackElem_t value)                                                                     //
+static StackElem_t StackPush(Stack_t* stackObject, StackElem_t pushElemvalue)                                                            //
 {                                                                                                                                        //
     assert(stackObject != (Stack_t*)    POISON_VALUES::POINTER && stackObject && "Inapropriate stack object pointer");                   //                                          
                                                                                                                                          //
@@ -62,7 +62,7 @@ static ERROR_CODE StackPush(Stack_t* stackObject, StackElem_t value)            
     if (IncreaseCapacity(stackObject->self) != NO_ERROR)                                                                                 //
         RETURN(ALLOCATION_ERROR);                                                                                                        //
                                                                                                                                          //
-    stackObject->data[stackObject->size++] = value;                                                                                      //
+    stackObject->data[stackObject->size++] = pushElemvalue;                                                                              //
                                                                                                                                          //
 #if defined(VALIDATION_ACTIVE)                                                                                                           //
                                                                                                                                          //
@@ -72,11 +72,11 @@ static ERROR_CODE StackPush(Stack_t* stackObject, StackElem_t value)            
                                                                                                                                          //
 #endif // VALIDATION_ACTIVE                                                                                                              //
                                                                                                                                          //
-    RETURN(NO_ERROR);                                                                                                                    //
+    return pushElemvalue;                                                                                                                //
 }                                                                                                                                        //
                                                                                                                                          //
                                                                                                                                          //
-static ERROR_CODE StackPop(Stack_t* stackObject)                                                                                         //
+static StackElem_t StackPop(Stack_t* stackObject)                                                                                        //
 {                                                                                                                                        //
     assert(stackObject != (Stack_t*)    POISON_VALUES::POINTER && stackObject && "Inapropriate stack object pointer");                   //                                          
                                                                                                                                          //                                                                                                                                                                                                                                                                               
@@ -92,6 +92,7 @@ static ERROR_CODE StackPop(Stack_t* stackObject)                                
     if (DecreaseCapacity(stackObject->self) != NO_ERROR)                                                                                 //
         RETURN(ALLOCATION_ERROR);                                                                                                        //
                                                                                                                                          //
+    StackElem_t popElemValue = stackObject->top(stackObject->self);                                                                      //                                                             //
     stackObject->data[--stackObject->size] = (StackElem_t) POISON_VALUES::NUMBER;                                                        //
                                                                                                                                          //
 #if defined(VALIDATION_ACTIVE)                                                                                                           //
@@ -102,7 +103,7 @@ static ERROR_CODE StackPop(Stack_t* stackObject)                                
                                                                                                                                          //
 #endif // VALIDATION_ACTIVE                                                                                                              //
                                                                                                                                          //
-    RETURN(NO_ERROR);                                                                                                                    //
+    return popElemValue;                                                                                                                 //
 }                                                                                                                                        //
                                                                                                                                          //
                                                                                                                                          //
@@ -251,7 +252,8 @@ ERROR_CODE StackCtor(Stack_t* stackObject, const char* name)                    
                                                                                                                                          //
     VALIDATE(stackObject, StackValid, StackDump);                                                                                        //
                                                                                                                                          //
-#endif // VALIDATION_ACTIVE                                                                                                              //                                                                                                                                                                                                                                                                            
+#endif // VALIDATION_ACTIVE                                                                                                              //
+                                                                                                                                         //                                                                                                                                                                                                                                                                            
     RETURN(NO_ERROR);                                                                                                                    //
 }                                                                                                                                        //
                                                                                                                                          //                       
@@ -308,8 +310,8 @@ void StackDtor(Stack_t* stackObject)                                            
                                                                                                                                          //
     // destroying methods                                                                                                                //
     stackObject->top  = (StackElem_t (*)(stack*))                          POISON_VALUES::POINTER;                                       //
-    stackObject->pop  = (ERROR_CODE  (*)(stack*))                          POISON_VALUES::POINTER;                                       //
-    stackObject->push = (ERROR_CODE  (*)(stack*, StackElem_t))             POISON_VALUES::POINTER;                                       //
+    stackObject->pop  = (StackElem_t (*)(stack*))                          POISON_VALUES::POINTER;                                       //
+    stackObject->push = (StackElem_t (*)(stack*, StackElem_t))             POISON_VALUES::POINTER;                                       //
 }                                                                                                                                        //
                                                                                                                                          //
                                                                                                                                          //
