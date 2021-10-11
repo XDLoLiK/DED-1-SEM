@@ -69,8 +69,8 @@ typedef struct stack {
 
 // methods
     StackElem_t (*top)  (stack* self)                                                = nullptr;
-    ERROR_CODE  (*pop)  (stack* self)                                                = nullptr;
-    ERROR_CODE  (*push) (stack* self, StackElem_t value)                             = nullptr;
+    StackElem_t (*pop)  (stack* self)                                                = nullptr;
+    StackElem_t (*push) (stack* self, StackElem_t value)                             = nullptr;
     
     ON_DEBUG( void (*dump) (stack* self, const char* localName, FILE* dest, Location_t) = nullptr;)
 
@@ -92,7 +92,7 @@ typedef struct stack {
  * @param[in,out] stackObject pointer to the stack object
  * @return operation success status (ERROR_CODE)
  */
-static ERROR_CODE StackPop(Stack_t* stackObject);
+static StackElem_t StackPop(Stack_t* stackObject);
 
 /**
  * Puts an element into stack
@@ -100,7 +100,7 @@ static ERROR_CODE StackPop(Stack_t* stackObject);
  * @param[in] value a value to put
  * @return operation success status (ERROR_CODE)
  */
-static ERROR_CODE StackPush(Stack_t* stackObject, StackElem_t value);
+static StackElem_t StackPush(Stack_t* stackObject, StackElem_t pushElemvalue);
 
 ON_DEBUG(
 
@@ -113,14 +113,14 @@ ON_DEBUG(
  */
 static void StackDump(Stack_t* stackObject, const char* localName, FILE* destFile, Location_t location);
 
+) // ON_DEBUG
+
 /**
  * Returns first from the top stack element
  * @param[in] stackObject pointer to the stack object
  * @return top element
  */
 static StackElem_t StackTop(Stack_t* stackObject);
-
-) // ON_DEBUG
 
 //}------------------------------------------------------------------------------------------------
 
