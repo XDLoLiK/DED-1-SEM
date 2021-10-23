@@ -1,14 +1,22 @@
 /**
-* @file main.cpp
-*/
+ * @file main.cpp
+ */
 
 #include <stdio.h>
 
 #include "Processor.h"
 
-int main(void)
+
+int main(int argc, const char* argv[])
 {
-	printf("OK\n");
+
+	File sourceCode = {};
+	File_ctor(&sourceCode);
+
+	writeSourceText(&sourceCode, "code.o", "a+");
+
+	Processor intel_Core_i_5 = {};
+	ProcessorCtor(&intel_Core_i_5);
 
 	return 0;
 }
