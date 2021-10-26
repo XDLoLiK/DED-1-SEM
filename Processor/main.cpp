@@ -4,19 +4,39 @@
 
 #include <stdio.h>
 
-#include "Processor.h"
+#include "Terminal.h"
 
 
-int main(int argc, const char* argv[])
+int main(void)
 {
+	bool running = true;
 
-	File sourceCode = {};
-	File_ctor(&sourceCode);
+	while (running) {
 
-	writeSourceText(&sourceCode, "code.o", "a+");
+		printf("%s", PATH);
+		fflush(stdout);
 
-	Processor intel_Core_i_5 = {};
-	ProcessorCtor(&intel_Core_i_5);
+		char command[MAX_PROCESS_NAME_LENGTH] = "";
+		scanf(" %s", command);
+
+		if (strcmp(command, "exit") == 0) 
+			running = false;
+
+		else if (strcmp(command, "fas") == 0) 
+			ON_COMPILE()
+
+		else if (strcmp(command, "go") == 0) 
+			ON_EXECUTE()
+
+		else if (strcmp(command, "nextdoor") == 0)
+			ON_CHANGE_DIRECTORY()
+
+		else if (strcmp(command, "help") == 0)
+			ON_HELP()
+		
+		else 
+			WARNING_LOG(INAPPROPRIATE_COMMAND);
+	}
 
 	return 0;
 }

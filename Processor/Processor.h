@@ -9,61 +9,49 @@
 #include <stdio.h>
 #include <assert.h>
 
-#include "Assembler.h"
-#include "Disassembler.h"
+#include "Commands.h"
 
 #include "..\Stack\Stack.h"
 
-#include "Commands.h"
+
+const uint64_t MEM_SIZE = 524288; /// 512 MB in bytes
+const uint64_t REGS_NUM = 4;	  /// 4 registers
 
 
-const uint64_t MEM_SIZE = 524288; // 512 MB
-const uint64_t REGS_NUM = 4;	  // 4 registers
+//{--------------------------------------------------Typedefs-of-processor-fileds'-types---------------------------------------------------
+
+typedef int32_t		VideoMem_t;
+typedef int64_t		Reg_t;
+typedef StackElem_t Codes_t;
+
+//}----------------------------------------------------------------------------------------------------------------------------------------
 
 
-#define DEF_CMD(cmd, num, args, code) 			\
-												\
-	case (CMD_##cmd):							\
-		code;									\
-		ip += 1 + (args);						\
-		break;						
-
+//{-----------------------------------------------------------Processor-struct-------------------------------------------------------------
 
 typedef struct processor {
 
-	Stack_t   stack 		 = {};
-	uint64_t  regs[REGS_NUM] = {};
-	uint64_t* ip 		     = nullptr;
-	void* 	  RAM 			 = nullptr;
-	void* 	  codes 		 = nullptr;
-	void* 	  videomem 		 = nullptr;
+	VideoMem_t*  videomem 	    = nullptr;
+	Codes_t* 	 codes 		 	= nullptr;      
+	StackElem_t* ram 		    = nullptr;		 
+	int64_t   	 ip 		    = -1;
+	Stack_t   	 stack 		 	= {};
+	StackElem_t  regs[REGS_NUM] = {};
 
 } Processor;
 
+//{----------------------------------------------------------------------------------------------------------------------------------------
 
 
-
-//          !!!!!!!!!!!!!!!!!!
-
-
-
+typedef struct command_t {
+	
+} Command_t;
 
 
-StackElem_t ProcessorSub(Stack_t* stack);
-StackElem_t ProcessorMul(Stack_t* stack);
-StackElem_t ProcessorDiv(Stack_t* stack);
-StackElem_t ProcessorAdd(Stack_t* stack);
-StackElem_t ProcessorOut(Stack_t* stack, FILE* destFile);
-StackElem_t ProcessorIn(Stack_t* stack, StackElem_t inValue);
-
-ERROR_CODES ProcessorExecute(Processor* IntelCore);
-ERROR_CODES ProcessorHlt(int exitCode);
-
-ERROR_CODES ProcessorCtor(Processor* brandNewProc);
-void ProcessorDtor(Processor* oldFashionedProc);
-
-
-#undef DEF_CMD
+ERROR_CODES Execute(Processor* PROCESSOR);
+ERROR_CODES ProcessorCtor(Processor* AMD_Ryzen, char* instructions);
+void ProcessorDtor(Processor* IntelPentium);
+ERROR_CODES ScanCodes(FILE* executableFile, Codes_t* codes);
 
 
 #endif // PROCESSOR_H

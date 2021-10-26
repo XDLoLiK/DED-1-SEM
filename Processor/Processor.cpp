@@ -5,101 +5,84 @@
 #include "Processor.h"
 
 
-ERROR_CODES ProcessorCtor(Processor* brandNewProc)
+//{--------------------------------------------------------DEF-CMD-for-processor-----------------------------------------------------------
+
+#define DEF_CMD(cmd, num, args, code) 			\
+												\
+	case (CMD_##cmd):							\
+		code;									\
+		// ip += 1 + (args);						\
+		break;						
+
+//{----------------------------------------------------------------------------------------------------------------------------------------
+
+
+ERROR_CODES Execute(Processor* PROCESSOR)
 {
-	assert(brandNewProc);
+	while (CODES[IP] != CMD_hlt) {
 
-	StackCtor(&brandNewProc->stack, "procStack");
+		switch (CODES[IP]) {
+		
+			#include "defcmd.h" // ->
+			/* case (CMD_<cmd name> ...):
+			       code ... */
 
-	brandNewProc->RAM = calloc(MEM_SIZE, sizeof (char));
-	brandNewProc->videomem = brandNewProc->RAM + MEM_SIZE / 2 * sizeof (char);
+			default:
+			  RETURN(INAPPROPRIATE_COMMAND);
+		}
+	}
 
-	brandNewProc->ip = &brandNewProc->regs[REGS_NUM - 1];
+	RETURN(NO_ERROR);
+}
 
-	brandNewProc->codes = ProcessorGetCodes(); ???????
+
+ERROR_CODES ProcessorCtor(Processor* PROCESSOR)
+{
+	assert(PROCESSOR);
+
+	if (StackCtor(&STACK, "processorStack") != NO_ERROR)
+		RETURN(CONSTRUCTION_ERROR);
+
+	RAM 	    = (StackElem_t*) calloc(MEM_SIZE, 1);                
+	VIDEOMEM    = (VideoMem_t*)  RAM + MEM_SIZE / 2;      
+	IP 		    = 0;	     				 
 	
 	RETURN(NO_ERROR);
 }
 
 
-void ProcessorDtor(Processor* oldFashionedProc)
+void ProcessorDtor(Processor* PROCESSOR)
 {
-	assert(oldFashionedProc);
+	assert(PROCESSOR);
 
-	free(oldFashionedProc->RAM);
-	free(oldFashionedProc->codes);
-	free(oldFashionedProc->videomem);
-
-	for (int i = 0; i < REGS_NUM; ++i) {
-		oldFashionedProc->regs[i] = (uint64_t) POISON_NUMBER;
-	}
-
-	StackDtor(&oldFashionedProc->stack);
+	// setting allocated memory free
 	
-	oldFashionedProc->ip 	   = (void*) POISON_POINTER;
-	oldFashionedProc->RAM 	   = (void*) POISON_POINTER;
-	oldFashionedProc->codes    = (void*) POISON_POINTER;
-	oldFashionedProc->videomem = (void*) POISON_POINTER;
+	free(RAM);
+	free(CODES);
+	free(VIDEOMEM);
+
+	// poisoning registers
+	
+	for (int i = 0; i < REGS_NUM; ++i) 
+		REGS[i] = (uint64_t) POISON_NUMBER;
+
+	// destroying stack
+	
+	StackDtor(&STACK);
+
+	// poisoning processor fields
+
+	IP 	     = (int64_t)  	   POISON_NUMBER;
+	RAM 	 = (StackElem_t*)  POISON_POINTER;
+	CODES    = (Codes_t*) 	   POISON_POINTER;
+	VIDEOMEM = (VideoMem_t*)   POISON_POINTER;
 }
 
 
-StackElem_t ProcessorAdd(Stack_t* stack)
+ERROR_CODES ScanCodes(FILE* executableFile, Codes_t* codes)
 {
-	assert(stack);
-
-	return StackPush(stack, StackPop(stack) + StackPop(stack));
-}
-
-
-StackElem_t ProcessorSub(Stack_t* stack)
-{
-	assert(stack);
-
-	return StackPush(stack, StackPop(stack) - StackPop(stack));
-}
-
-
-StackElem_t ProcessorMul(Stack_t* stack)
-{
-	assert(stack);
-
-	return StackPush(stack, StackPop(stack) * StackPop(stack));
-}
-
-
-StackElem_t ProcessorDiv(Stack_t* stack)
-{
-	assert(stack);
-
-	return StackPush(stack, StackPop(stack) / StackPop(stack));
-}
-
-
-StackElem_t ProcessorOut(Stack_t* stack, FILE* destFile = stdout)
-{
-	assert(stack && destFile);
-
-	fprintf(destFile, "%llu\n", StackTop(stack));
-
-	return StackTop(stack);
-}
-
-
-StackElem_t ProcessorIn(Stack_t* stack, StackElem_t inValue)
-{
-	assert(stack);
-
-	return StackPush(stack, inValue);
-}
-
-
-ERROR_CODES ProcessorExecute(Processor* IntelCore)
-{
-	while (true) {
-
-		#include "defcmd.h"
-		default:  RETURN(INAPPROPRIATE_COMMAND);
-	}
+	assert(executableFile);
+	assert(codes);
 
 	RETURN(NO_ERROR);
 }
