@@ -29,13 +29,10 @@ static char PATH[MAX_CD_PATH_SIZE] = "DedProjects\\Processor>";
 	File sourceFile = {};											\
 																	\
 	if (scanf(" %s.ass", sourceFile.path) != 1)						\
-		WARNING_LOG(SCAN_ERROR);									\
+		WARNING_LOG(SCAN_ERROR, ERROR);								\
 																	\
-	if (File_ctor(&sourceFile) == NO_ERROR) {						\
-																	\
-		FILE* executableFile = CreateExecutable(sourceFile.path);	\
-		Compile(&sourceFile, executableFile);						\
-	}																\
+	if (IS_OK(File_ctor(&sourceFile)))		 						\
+		Compile(&sourceFile);										\
 																	\
 	File_dtor(&sourceFile);											\
 }
@@ -48,22 +45,18 @@ static char PATH[MAX_CD_PATH_SIZE] = "DedProjects\\Processor>";
 	char executablePath[MAX_PATH_SIZE] = "";					\
 																\
 	if (scanf(" %s.cum", executablePath) != 1) {				\
-		WARNING_LOG(SCAN_ERROR);								\
+		WARNING_LOG(SCAN_ERROR, ERROR);							\
 	}															\
 																\
 	else {														\
 																\
 		FILE* executableFile = fopen(executablePath, "r");		\
 																\
-		if (executableFile != nullptr) {						\
-																\
-			ScanCodes(executableFile, M1.codes);				\
+		if (executableFile != nullptr) 							\
 			Execute(&M1);										\
-		}														\
 																\
-		else {													\
-			WARNING_LOG(NO_SUCH_FILE_OR_DIRECTORY);				\
-		}														\
+		else 													\
+			WARNING_LOG(NO_SUCH_FILE_OR_DIRECTORY, ERROR);		\
 	}															\
 }						   	
 
@@ -86,7 +79,7 @@ static char PATH[MAX_CD_PATH_SIZE] = "DedProjects\\Processor>";
 	char* lastdir = strchr(PATH, '\\');						\
 															\
 	if (lastdir == nullptr) {								\
-		WARNING_LOG(YOU_ARE_ALREADY_ON_YOUR_KNEES);			\
+		WARNING_LOG(YOU_ARE_ALREADY_ON_YOUR_KNEES, ERROR);	\
 	}														\
 															\
 	else {													\

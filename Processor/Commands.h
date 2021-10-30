@@ -9,30 +9,21 @@
 
 #include <inttypes.h>
 
+#include "../Stack/Config.h"
 
-const uint64_t RAM_ARG   = (uint64_t) 1 << 63;
-const uint64_t REG_ARG	 = (uint64_t) 1 << 62;
-const uint64_t IMM_CONST = (uint64_t) 1 << 61;
+
+typedef StackElem_t   Argument_t;
+typedef unsigned char Instruction_t;
+
+
+const Instruction_t RAM_ARG   	  = (Instruction_t) 1 << 7;
+const Instruction_t REG_ARG	  	  = (Instruction_t) 1 << 6;
+const Instruction_t IMM_CONST 	  = (Instruction_t) 1 << 5;
+const Instruction_t COMMAND_BITS  = (Instruction_t) 1 << 5;
 
 
 #define VERSION 	1.0
 #define SIGNATURE	"DED!"
-
-
-//{--------------------------------------------------------------DSL-----------------------------------------------------------------------
-
-#define STACK     PROCESSOR->stack
-#define IP	 	  PROCESSOR->ip
-#define CODES 	  PROCESSOR->codes
-#define RAM       PROCESSOR->ram
-#define REGS 	  PROCESSOR->regs
-#define VIDEOMEM  PROCESSOR->videomem
-
-#define PUSH(arg) StackPush(&STACK, (arg))
-#define POP   	  StackPop (&STACK)
-#define TOP       StackTop (&STACK)
-
-//}----------------------------------------------------------------------------------------------------------------------------------------
 
 
 #define DEF_CMD(cmd, num, ...)	\
@@ -41,7 +32,7 @@ const uint64_t IMM_CONST = (uint64_t) 1 << 61;
 
 enum COMMANDS {
 
-	#include "defcmd.h"
+	#include "DEF_CMD.h"
 	CMD_MAX = 300
 };
 

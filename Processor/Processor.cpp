@@ -2,16 +2,17 @@
  * @file Processor.cpp
  */
 
+
 #include "Processor.h"
 
 
 //{--------------------------------------------------------DEF-CMD-for-processor-----------------------------------------------------------
 
-#define DEF_CMD(cmd, num, args, code) 			\
-												\
-	case (CMD_##cmd):							\
-		code;									\
-		// ip += 1 + (args);						\
+#define DEF_CMD(cmd, num, args, code)				\
+													\
+	case (CMD_##cmd):								\
+		code;										\
+		IP += 1;									\
 		break;						
 
 //{----------------------------------------------------------------------------------------------------------------------------------------
@@ -21,11 +22,11 @@ ERROR_CODES Execute(Processor* PROCESSOR)
 {
 	while (CODES[IP] != CMD_hlt) {
 
-		switch (CODES[IP]) {
+		switch (CODES[IP] % COMMAND_BITS) {
 		
-			#include "defcmd.h" // ->
-			/* case (CMD_<cmd name> ...):
-			       code ... */
+			#include "DEF_CMD.h" // ->
+			// case (CMD_<cmd_name>):
+			//     code ... 
 
 			default:
 			  RETURN(INAPPROPRIATE_COMMAND);
@@ -36,16 +37,20 @@ ERROR_CODES Execute(Processor* PROCESSOR)
 }
 
 
-ERROR_CODES ProcessorCtor(Processor* PROCESSOR)
+ERROR_CODES ProcessorCtor(Processor* PROCESSOR, FILE* executableFile)
 {
 	assert(PROCESSOR);
 
-	if (StackCtor(&STACK, "processorStack") != NO_ERROR)
+	if (!IS_OK(StackCtor(&STACK, "processorStack")))
 		RETURN(CONSTRUCTION_ERROR);
 
-	RAM 	    = (StackElem_t*) calloc(MEM_SIZE, 1);                
-	VIDEOMEM    = (VideoMem_t*)  RAM + MEM_SIZE / 2;      
-	IP 		    = 0;	     				 
+	RAM 	 = (StackElem_t*) calloc(MEM_SIZE, 1);                
+	VIDEOMEM = (VideoMem_t*)  RAM + MEM_SIZE / 2;      
+	IP       = 0;	     		
+
+	// if (!IS_OK(ScanCodes())) {
+		// 
+	// }
 	
 	RETURN(NO_ERROR);
 }
@@ -72,17 +77,19 @@ void ProcessorDtor(Processor* PROCESSOR)
 
 	// poisoning processor fields
 
-	IP 	     = (int64_t)  	   POISON_NUMBER;
-	RAM 	 = (StackElem_t*)  POISON_POINTER;
-	CODES    = (Codes_t*) 	   POISON_POINTER;
-	VIDEOMEM = (VideoMem_t*)   POISON_POINTER;
+	IP 	     = (int64_t)  	   	POISON_NUMBER;
+	RAM 	 = (StackElem_t*)  	POISON_POINTER;
+	CODES    = (Instruction_t*)	POISON_POINTER;
+	VIDEOMEM = (VideoMem_t*)   	POISON_POINTER;
 }
 
 
-ERROR_CODES ScanCodes(FILE* executableFile, Codes_t* codes)
+ERROR_CODES ScanCodes(Instruction_t* codes, FILE* executableFile)
 {
 	assert(executableFile);
 	assert(codes);
+
+
 
 	RETURN(NO_ERROR);
 }

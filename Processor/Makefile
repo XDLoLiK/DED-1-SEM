@@ -1,11 +1,11 @@
-COMPILER = g++
+CXX       = g++
 
-FLAGS = 
+FLAGS     = -g
 
 PROCESSOR = Assembler.cpp Disassembler.cpp Processor.cpp main.cpp
 
-EXTERNAL = ..\Stack\Stack.cpp ..\Onegin\TextSort.cpp ..\Onegin\Swapper.cpp
+EXTERNAL  = ..\Stack\Stack.cpp ..\Onegin\TextSort.cpp ..\Onegin\Swapper.cpp
 
 all:
-	$(COMPILER) $(FLAGS) $(PROCESSOR) $(EXTERNAL) -o terminal.exe
+	$(CXX) $(FLAGS) $(PROCESSOR) $(EXTERNAL) -o terminal.exe
 

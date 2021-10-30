@@ -35,7 +35,7 @@ int main(void)
 			ON_HELP()
 		
 		else 
-			WARNING_LOG(INAPPROPRIATE_COMMAND);
+			WARNING_LOG(INAPPROPRIATE_COMMAND, ERROR);
 	}
 
 	return 0;

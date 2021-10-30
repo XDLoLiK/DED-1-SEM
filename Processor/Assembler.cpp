@@ -8,36 +8,44 @@
 	
 #define DEF_CMD(cmd, num, args, ...)									\
 																		\
-	else if (strcmp(token, #cmd) == 0)			 	 					\
-			fprintf(executableFile, "\t%08X\n", (int) CMD_##cmd);		
-		
+	else if (strcmp(token, #cmd) == 0) {				 				\
+																		\
+		if (args == 0) {												\
+			WRITE(executableFile, "%08X\n", CMD_##cmd);					\
+			CUR_IP += sizeof (Instruction_t);							\
+		}																\
+																		\
+		else if (args == 1) {											\
+			WRITE(executableFile, "%08X ", CMD_##cmd);					\
+			CUR_IP += sizeof (Instruction_t);							\
+																		\
+			CompileLabel(currentStr, executableFile);					\
+		}																\
+																		\
+		else if (args == 2) {											\
+			CompileArgument(currentStr, CMD_##cmd, executableFile);		\
+		}																\
+	}
+			
 
+//{--------------------------------------------------Main-Compilation-functions-------------------------------------------------------------
 
-// TODO: CompilePush
-// TODO: CompileLabel
-// TODO: CompilePop
-// TODO: SearchLabel
-// TODO: UpdateFixups
-
-
-//{--------------------------------------------------Main-Compilation-function-------------------------------------------------------------
-
-ERROR_CODES Compile(File* sourceCode, FILE* executableFile)
+ERROR_CODES Compile(File* sourceFile)
 {
-	assert(sourceCode);
-	assert(executableFile);
+	assert(sourceFile);
 
-	StripCode(sourceCode); // deleting comments
+	FILE* executableFile = CreateExecutable(sourceFile->path);
+	StripCode(sourceFile); // deleting comments
 
-	char token[MAX_TOKEN_LENGTH] = "";
-
-	for (; CUR_STR < sourceCode->strings_n; CUR_STR++) {
+	char  token[MAX_TOKEN_LENGTH] = "";
+	
+	for (; CUR_PASS <= PASSES; ++CUR_PASS) {
 		
-		if (!IS_OK(GetToken(token, sourceCode->strings_list[CUR_STR].start)))
-			continue; // GetToken(...) == EMPTY_STRING
+		CUR_STR_N = 0;
+		CUR_IP    = 0;
 
-		if (!IS_OK(HandleToken(token, executableFile)))
-			continue; // LOG_COMPILATION_ERROR(...)
+		for (; CUR_STR_N < sourceFile->strings_n; CUR_STR_N++) 
+			ComipleString(sourceFile->strings_list[CUR_STR_N].start, executableFile);
 	}
 
 	fclose(executableFile);
@@ -45,45 +53,46 @@ ERROR_CODES Compile(File* sourceCode, FILE* executableFile)
 	RETURN(NO_ERROR);
 }
 
-//}----------------------------------------------------------------------------------------------------------------------------------------
 
-
-//{------------------------------------------------Argumnets-Commands-Compilation----------------------------------------------------------
-
-ERROR_CODES CompilePush(char* pushCommand, FILE* executableFile)
+ERROR_CODES ComipleString(char* currentStr, FILE* executableFile)
 {
-	assert(pushCommand);
+	assert(currentStr);
 	assert(executableFile);
 
-	// int argsBits = 0;
+	char token[MAX_TOKEN_LENGTH] = "";
 
-	// char args[MAX_ARG_LENGTH]     = "";
-	// char regArg[MAX_ARG_LENGTH]   = "";
-	// char immConst[MAX_ARG_LENGTH] = "";
+	if (StringIsEmpty(currentStr))
+		return EMPTY_STRING;
+	
+	sscanf(currentStr, " %[^\n]", token);
 
-	// if (sscanf(pushCommand, "%*s %s[a-d+x[]1-9]", args) != 1)
-	// 	ERROR_LOG(INAPPROPRIATE_ARGUMENT);
+	if (token[strlen(token) - 1] == ':') {
 
-	// if (sscanf(args, "[%[a-d1-9+x]]") == 1)
-	// 	argsBits += RAM_ARG; // 10000000
+		if (SearchLabel(token) == nullptr) 
+			UpdateLables(token);
+	}
 
-	// if (sscanf(args, " %1[a-d]x", toPrint) == 1) {
-	// 	argsBits += REG_ARG;  // 01000000
+	else if (IS_OK(CompileToken(currentStr, executableFile))) {
+		RETURN(NO_ERROR);
+	}
 
-	// }
-
-	// if (sscanf(args, "%[1-9]")) {
-
-	// }
+	else {
+		RET_COMPILATION_ERROR(INVALID_SYNTAX, token);
+	}
 
 	RETURN(NO_ERROR);
 }
+        
 
-
-ERROR_CODES CompilePop(char* popCommand, FILE* executableFile)
+ERROR_CODES StripCode(File* sourceFile)
 {
-	assert(popCommand);
-	assert(executableFile);
+	assert(sourceFile);
+
+	for (int i = 0; i < sourceFile->size_bytes; ++i) {
+		
+		if (sourceFile->text[i] == ';')
+			sourceFile->text[i] = '\n';
+	}
 
 	RETURN(NO_ERROR);
 }
@@ -93,15 +102,30 @@ ERROR_CODES CompilePop(char* popCommand, FILE* executableFile)
 
 //{--------------------------------------------------------Label-Handlers------------------------------------------------------------------
 
-ERROR_CODES CompileLabel(char* labelName, FILE* executableFile)
+ERROR_CODES CompileLabel(char* currentStr, FILE* executableFile)
 {
-	assert(labelName);
+	assert(currentStr);
 	assert(executableFile);
+
+	char labelName[MAX_LABEL_NAME_LENGTH] = "";
+
+	sscanf(currentStr, "%*s %s", labelName);
 
 	Label_t* label = SearchLabel(labelName);
 
-	if (label == nullptr) {
-		// RETURN();
+	if (label != nullptr) {
+
+		WRITE(executableFile, "%08X\n", label->jumpPoint);
+		CUR_IP += sizeof (Argument_t);
+	}
+
+	else if (CUR_PASS >= 2) {
+		RET_COMPILATION_ERROR(INAPPROPRIATE_LABEL, labelName);
+	}
+
+	else {
+		WRITE(executableFile, "%08X\n", -1);
+		CUR_IP += sizeof (Argument_t);
 	}
 
 	RETURN(NO_ERROR);
@@ -114,13 +138,11 @@ Label_t* SearchLabel(char* labelName)
 
 	for (int i = 0; i < FIXUPS.labelsCount; ++i) {
 
-		if (FIXUPS.labelsList[i].name == labelName) 
+		if (strcmp(FIXUPS.labelsList[i].name, labelName) == 0) 
 			return &FIXUPS.labelsList[i];
 	}
 
-	UpdateLables(labelName);
-
-	return &FIXUPS.labelsList[FIXUPS.labelsCount - 1];
+	return nullptr;
 }
 
 
@@ -128,9 +150,12 @@ ERROR_CODES UpdateLables(char* labelName)
 {
 	assert(labelName);
 
+	labelName[strlen(labelName) - 1] = '\0';
+
 	Label_t* newptr = (Label_t*) realloc(FIXUPS.labelsList, (FIXUPS.labelsCount + 1) * sizeof (Label_t));
 
 	if (newptr == nullptr) {
+
 		RETURN(ALLOCATION_ERROR);
 	}
 
@@ -140,7 +165,7 @@ ERROR_CODES UpdateLables(char* labelName)
 		++FIXUPS.labelsCount;
 
 		strcpy(FIXUPS.labelsList[FIXUPS.labelsCount - 1].name, labelName);
-		FIXUPS.labelsList[FIXUPS.labelsCount - 1].jumpPoint = -1; 
+		FIXUPS.labelsList[FIXUPS.labelsCount - 1].jumpPoint = CUR_IP;
 	}
 
 	RETURN(NO_ERROR);
@@ -149,62 +174,144 @@ ERROR_CODES UpdateLables(char* labelName)
 //}----------------------------------------------------------------------------------------------------------------------------------------
 
 
-//{--------------------------------------------------------Token-Handler-------------------------------------------------------------------
+//{--------------------------------------------------------Various-Types-Compiler----------------------------------------------------------
 
-ERROR_CODES HandleToken(char* token, FILE* executableFile)
+ERROR_CODES CompileToken(char* currentStr, FILE* executableFile)
 {
-	assert(token);
+	assert(currentStr);
 	assert(executableFile);
 
-	if (strcmp(token, "push") == 0) {	
-		RETURN(CompilePush(token, executableFile));				
+	char token[MAX_TOKEN_LENGTH] = "";
+
+	if (sscanf(currentStr, " %[a-zA-Z]", token) != 1)  {
+		RET_COMPILATION_ERROR(INVALID_TOKEN, token);
 	}
 
-	else if (strcmp(token, "pop") == 0) {	
-		RETURN(CompilePop(token, executableFile));				
-	}			
-
-	#include "defcmd.h" // -> 
+	#include "DEF_CMD.h" // -> 
 	// else if (strcmp(token, ...) == 0) ... 															
 
-	else if (IS_OK(CompileLabel(token, executableFile))) {
-		RET_COMPILATION_ERROR(INAPPROPRIATE_LABEL, CUR_STR + 1, token);			
-	}
-
-	else {
-		RET_COMPILATION_ERROR(INVALID_SYNTAX, CUR_STR + 1, token);
-	}
+	else 
+		return INVALID_SYNTAX;
 
 	RETURN(NO_ERROR);
 }
 
 
-ERROR_CODES GetToken(char* token, char* buffer)
+ERROR_CODES CompileArgument(char* currentStr, char commandNum, FILE* executableFile)
 {
-	assert(buffer);
+	assert(currentStr);
+	assert(executableFile);
 
-	if (sscanf(buffer, " %s ", token) == 0)
-		return EMPTY_STRING;
+	Instruction_t argBits = 0;
+	Instruction_t result  = 0;
 
-	RETURN(NO_ERROR); 
+	char argument[MAX_ARG_LENGTH] = "";
+	char regArg  [MAX_ARG_LENGTH] = "";
+	char immConst[MAX_ARG_LENGTH] = "";
+
+	sscanf(currentStr, "%*s %[^\n]", argument);
+
+	if (result = CompileRam(argument)) 
+		argBits += result;
+
+	if (result = CompileReg(argument, regArg)) {
+
+		argBits += result;
+		CUR_IP  += sizeof (Argument_t);
+	}
+
+	if (result = CompileConst(argument, immConst)) {
+
+		argBits += result;
+		CUR_IP  += sizeof (Argument_t);
+	}
+
+	WRITE(executableFile, "%08X", commandNum + argBits);
+	CUR_IP += 1;
+
+	if (strlen(immConst))
+		WRITE(executableFile, " %08X", strtoll(immConst, nullptr, 10));
+
+	if (strlen(regArg))
+		WRITE(executableFile, " %08X", *regArg - 'a');
+
+	WRITE(executableFile, "\n", 0);
+
+	RETURN(NO_ERROR);
+}
+
+
+Instruction_t CompileRam(char* argument)
+{
+	assert(argument);
+
+	if (strchr(argument, ']') > strchr(argument, '[')) {
+
+		if (StringCount(argument, '[') == 1 && StringCount(argument, ']') == 1) 
+			return RAM_ARG;
+		
+		else
+			RET_COMPILATION_ERROR(INAPPROPRIATE_ARGUMENT, argument);
+	}
+
+	return 0;
+}
+
+
+Instruction_t CompileReg(char* argument, char* argContainer)
+{
+	assert(argument);
+	assert(argContainer);
+	
+	int i = 0;
+
+	while (argument[i] != '\0') {
+
+		if (argument[i] - 'a' >= 0 && argument[i] - 'a' <= 3) {
+
+			if (argument[i + 1] == 'x') {
+
+				*argContainer = argument[i];	
+				return REG_ARG;
+			}
+
+			else {
+				RET_COMPILATION_ERROR(INAPPROPRIATE_ARGUMENT, argument);
+			}
+		}
+
+		i++;
+	}
+
+	return 0;
+}
+
+
+Instruction_t CompileConst(char* argument, char* argContainer)
+{
+	assert(argument);
+	assert(argContainer);
+
+	int i = 0;
+
+	while (argument[i] != '\0') {
+
+		if (argument[i] - '0' < 10 && argument[i] - '0' >= 0) {
+			
+			sscanf(&argument[i], "%[0-9]", argContainer);
+			return IMM_CONST;
+		}
+
+		i++;
+	}
+
+	return 0;
 }
 
 //}----------------------------------------------------------------------------------------------------------------------------------------
 
 
-ERROR_CODES StripCode(File* sourceCode)
-{
-	assert(sourceCode);
-
-	for (int i = 0; i < sourceCode->size_bytes; ++i) {
-		
-		if (sourceCode->text[i] == ';')
-			sourceCode->text[i] = '\n';
-	}
-
-	RETURN(NO_ERROR);
-}
-
+//{--------------------------------------------------------No-Name-LOL---------------------------------------------------------------------
 
 FILE* CreateExecutable(const char* sourcePath)
 {
@@ -222,3 +329,37 @@ FILE* CreateExecutable(const char* sourcePath)
 	return executableFile;
 }
 
+
+size_t StringCount(char* str, char symbol)
+{
+	assert(str);
+
+	size_t count = 0;
+
+	for (int i = 0; i < strlen(str); ++i) {
+
+		if (str[i] == '\0')
+			break;
+
+		else if (str[i] == symbol)
+			++count;
+	}
+
+	return count;
+}
+
+
+bool StringIsEmpty(char* str)
+{
+	assert(str);
+
+	while (*str++ != '\n') {
+
+		if (*str != '\t' && *str != ' ')
+			return false;
+	}
+
+	return true;
+}
+
+//}----------------------------------------------------------------------------------------------------------------------------------------
