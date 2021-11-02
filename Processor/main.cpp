@@ -4,11 +4,13 @@
 
 #include <stdio.h>
 
-#include "Terminal.h"
+#include "Terminal\Terminal.h"
 
 
 int main(void)
 {
+	char PATH[MAX_CD_PATH_SIZE] = "DedProjects\\Processor>";
+
 	bool running = true;
 
 	while (running) {
@@ -23,16 +25,19 @@ int main(void)
 			running = false;
 
 		else if (strcmp(command, "fas") == 0) 
-			ON_COMPILE()
+			ON_COMPILE();
+
+		else if (strcmp(command, "dick") == 0) 
+			ON_DECOMPILE();
 
 		else if (strcmp(command, "go") == 0) 
-			ON_EXECUTE()
+			ON_EXECUTE();
 
 		else if (strcmp(command, "nextdoor") == 0)
-			ON_CHANGE_DIRECTORY()
+			ON_CHANGE_DIRECTORY(PATH);
 
 		else if (strcmp(command, "help") == 0)
-			ON_HELP()
+			ON_HELP();
 		
 		else 
 			WARNING_LOG(INAPPROPRIATE_COMMAND, ERROR);
