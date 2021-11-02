@@ -1,0 +1,37 @@
+	call main
+	hlt
+
+main:
+	call factorial
+	ret
+
+
+factorial:
+
+	in
+	pop ax
+	push 1
+	pop bx
+
+next:
+	push ax
+	push 0
+	jae end
+	
+	push ax
+	push bx
+	mul
+	pop bx
+
+	push 1
+	push ax
+	sub
+	pop ax
+
+	jmp next	
+
+end:
+	push bx
+	out
+	pop 1
+	ret

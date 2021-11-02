@@ -1,0 +1,28 @@
+
+	call Squares
+
+	push 10
+	out
+
+	hlt
+
+Squares:
+
+	push 0
+	pop ax
+next:
+	push ax
+	push 10
+	jb stop
+	push ax
+	push ax
+	mul
+	out
+	pop 1
+	push ax
+	push 1
+	add
+	pop ax
+	jmp next
+stop:
+	ret

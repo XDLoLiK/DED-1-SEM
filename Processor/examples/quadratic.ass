@@ -1,0 +1,20 @@
+	call main
+	hlt
+
+main:
+	call SolveQuadratic
+	ret
+
+
+SolveQuadratic:
+	
+	in
+	pop ax ; a coeff
+	
+	in
+	pop bx ; b coeff
+	
+	in
+	pop cx ; c coeff
+
+	
