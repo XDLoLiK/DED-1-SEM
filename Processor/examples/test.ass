@@ -1,3 +1,27 @@
+push 2
+push 3
+push 2
+
+pop ax
+
 push 10
+pop [2] ; RAM[2] = 10
+
+push [0] ; 2 = 0
+push [1]
+push [2]
+
+push [3]
 out
+
+push [4]
+
+out
+push 5
+pop [5]
+
+push [5]
+
+out
+
 hlt

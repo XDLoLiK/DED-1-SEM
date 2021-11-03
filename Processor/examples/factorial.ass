@@ -17,7 +17,7 @@ next:
 	push ax
 	push 0
 	jae end
-	
+
 	push ax
 	push bx
 	mul

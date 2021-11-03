@@ -7,14 +7,44 @@ main:
 
 
 SolveQuadratic:
-	
+
 	in
 	pop ax ; a coeff
-	
+
 	in
 	pop bx ; b coeff
-	
+
 	in
 	pop cx ; c coeff
 
-	
+	call CountDiscriminant
+
+	push dx
+	push 0
+	ja NoRoots
+
+	ret
+
+
+CountDiscriminant:
+
+	push 4
+	push ax
+	mul
+	push cx
+	mul
+
+	push bx
+	push bx
+	mul
+
+	sub
+	pop dx
+
+	ret
+
+
+NoRoots:
+	push 0
+	out
+	hlt
