@@ -13,7 +13,7 @@
 	case (CMD_##cmd):								\
 		code;										\
 		IP += CMD_SIZE;								\
-		break;						
+		break;
 
 //{----------------------------------------------------------------------------------------------------------------------------------------
 
@@ -35,6 +35,8 @@ ERROR_CODES Execute(Processor* PROCESSOR, FILE* executableFile)
 	if (!IS_OK(CheckFile(CODES))) 
 		return EXECUTION_ERROR;
 
+	ON_DEBUG(int stepCount = 1);
+
 	while (CODES[IP] != CMD_hlt) {
 
 		switch (CODES[IP] % COMMAND_BITS) {
@@ -44,8 +46,16 @@ ERROR_CODES Execute(Processor* PROCESSOR, FILE* executableFile)
 			//     code ... 
 
 			default: 
-			  RETURN(INAPPROPRIATE_COMMAND);
+				RETURN(INAPPROPRIATE_COMMAND);
 		}
+
+		ON_DEBUG(
+
+			getchar();
+			StepDump(PROCESSOR, stepCount, stdout);
+			++stepCount;
+		
+		) // ON_DEBUG	
 	}
 
 	clock_t ExecutionEnd  = clock();
@@ -89,7 +99,7 @@ void ProcessorDtor(Processor* PROCESSOR)
 	// poisoning registers
 	
 	for (size_t i = 0; i < REGS_NUM; ++i) 
-		REGS[i] = (Argument_t) POISON_NUMBER;
+		REGS[i] = (Argument_t) NEUTRAL_NUM;
 
 	// destroying stack
 	
@@ -97,7 +107,7 @@ void ProcessorDtor(Processor* PROCESSOR)
 
 	// poisoning processor fields
 
-	IP 	     = (Argument_t)    	POISON_NUMBER;
+	IP 	     = (Argument_t)    	NEUTRAL_NUM;
 	RAM 	 = (StackElem_t*)  	POISON_POINTER;
 	CODES    = (Instruction_t*)	POISON_POINTER;
 	VIDEOMEM = (VideoMem_t*)   	POISON_POINTER;
@@ -132,3 +142,154 @@ size_t GetFileSize(FILE* executableFile)
 
 	return fileSize;
 }
+
+
+#ifdef STEP_VALIDATION
+
+ERROR_CODES StepDump(Processor* PROCESSOR, int stepCount, FILE* logFile)
+{
+	assert(PROCESSOR);
+	assert(logFile);
+
+	for (int i = 0; i < MAX_DEBUG_FIELD_LENGTH / 2; ++i)
+		fprintf(logFile, "=");
+
+	fprintf(logFile, "STEP=%d", stepCount);
+
+	for (int i = 0; i < MAX_DEBUG_FIELD_LENGTH / 2; ++i)
+		fprintf(logFile, "=");
+	fprintf(stdout, "\n\n");
+
+	// Various dumps
+
+	if (!IS_OK(DumpRegs(PROCESSOR, logFile)))
+		RETURN(EXECUTION_ERROR);
+
+	if (!IS_OK(DumpIP(PROCESSOR, logFile)))
+		RETURN(EXECUTION_ERROR);
+
+	if (!IS_OK(DumpStack(PROCESSOR, logFile)))
+		RETURN(EXECUTION_ERROR);
+
+#ifdef DO_YOU_REALLY_WANNA_DO_THAT
+
+	if (!IS_OK(DumpRAM(PROCESSOR, logFile)))
+		RETURN(EXECUTION_ERROR);
+
+#endif // DO_YOU_REALLY_WANNA_DO_THAT
+
+	RETURN(NO_ERROR);
+}
+
+
+ERROR_CODES DumpRegs(Processor* PROCESSOR, FILE* logFile)
+{
+	assert(PROCESSOR);
+	assert(logFile);
+
+	fprintf(logFile, "REGS\n\n");
+
+	for (int i = 0; i < (int) REGS_NUM; ++i)
+		fprintf(logFile, "+------------+   ");
+
+	fprintf(logFile, "\n");
+
+	for (int curReg = 0; curReg < (int) REGS_NUM; ++curReg)
+		fprintf(logFile, "|     %cx     |   ", 'a' + (char) curReg);
+
+	fprintf(logFile, "\n");
+
+	for (int i = 0; i < (int) REGS_NUM; ++i)
+		fprintf(logFile, "+------------+   ");
+
+	fprintf(logFile, "\n\n");	
+
+	for (int i = 0; i < (int) REGS_NUM; ++i)
+		fprintf(logFile, "+------------+   ");
+
+	fprintf(logFile, "\n");
+
+	for (int i = 0; i < (int) REGS_NUM; ++i)
+		fprintf(logFile, "| %10ld |   ", (long) REGS[i]);
+
+	fprintf(logFile, "\n");	
+
+	for (int i = 0; i < (int) REGS_NUM; ++i)
+		fprintf(logFile, "+------------+   ");
+
+	fprintf(logFile, "\n\n");	
+
+	RETURN(NO_ERROR);
+}
+
+
+ERROR_CODES DumpIP(Processor* PROCESSOR, FILE* logFile)
+{
+	assert(PROCESSOR);
+	assert(logFile);
+
+	fprintf(logFile, "IP\n\n");
+
+	fprintf(logFile, "+----+   +------------+\n");
+	fprintf(logFile, "| ip |   | %10ld |\n", (long) IP);
+	fprintf(logFile, "+----+   +------------+\n\n");
+
+	RETURN(NO_ERROR);
+}
+
+
+ERROR_CODES DumpRAM(Processor* PROCESSOR, FILE* logFile)
+{
+	assert(PROCESSOR);
+	assert(logFile);
+
+	fprintf(logFile, "RAM\n\n");
+
+	int RAMsOut = 0;
+
+	for (int i = 0; i < (int) MEM_SIZE; ++i) {
+		
+		if (RAM[i] != (Ram_t) NEUTRAL_NUM) {
+		
+			fprintf(logFile, "+---------------+   +------------+\n");
+			fprintf(logFile, "| RAM [%-7d] |   | %10ld |\n", i, (long) RAM[i]);
+			fprintf(logFile, "+---------------+   +------------+\n\n");
+
+			++RAMsOut;
+		}
+
+		if (RAMsOut >= MAX_RAM_DEBUG_OUTPUT) {
+			break;
+		}
+	}
+
+	RETURN(NO_ERROR);
+}
+
+
+ERROR_CODES DumpStack(Processor* PROCESSOR, FILE* logFile)
+{
+	assert(PROCESSOR);
+	assert(logFile);
+
+	fprintf(logFile, "STACK\n\n");
+
+	if (STACK.size == 0) {
+		
+		fprintf(logFile, "[EMPTY]\n\n");
+	}
+
+	for (int i = 0; i < (int) STACK.size; ++i) {
+		
+		if (STACK.data[i] != (StackElem_t) NEUTRAL_NUM) {
+		
+			fprintf(logFile, "+-----------------+   +------------+\n");
+			fprintf(logFile, "| STACK [%-7d] |   | %10ld |\n", i, (long) STACK.data[i]);
+			fprintf(logFile, "+-----------------+   +------------+\n\n");
+		}
+	}
+
+	RETURN(NO_ERROR);
+}
+
+#endif // STEP_VALIDATION

@@ -16,6 +16,21 @@
 #include "..\..\general\Errors.h"
 
 
+#define STEP_VALIDATION
+// #define DO_YOU_REALLY_WANNA_DO_THAT
+
+
+#ifdef ON_DEBUG
+#undef ON_DEBUG
+#endif
+
+#ifdef STEP_VALIDATION
+	#define ON_DEBUG(expr) expr
+#else
+	#define ON_DEBUG(expr)
+#endif
+
+
 //{--------------------------------------------------------General-Info--------------------------------------------------------------------
 
 typedef int32_t		VideoMem_t;
@@ -25,6 +40,12 @@ typedef StackElem_t Ram_t;
 
 const uint64_t MEM_SIZE = 16384;  /// 16 MB in bytes
 const uint64_t REGS_NUM = 4;	  /// 4 registers
+
+
+const int MAX_DEBUG_FIELD_LENGTH = 100;
+const int MAX_RAM_DEBUG_OUTPUT   = 10;
+
+const int NEUTRAL_NUM            = 66666;
 
 //}----------------------------------------------------------------------------------------------------------------------------------------
 
@@ -65,7 +86,7 @@ typedef struct processor {
 	Ram_t* 		   ram 		      = nullptr;		 
 	Stack_t   	   stack 		  = {};
 	Argument_t     regs[REGS_NUM] = {};
-	Argument_t     ip 		      = -1;
+	int64_t        ip 		      = -1;
 
 } Processor;
 
@@ -120,5 +141,15 @@ ERROR_CODES CheckFile(Instruction_t* codes);
  */
 size_t GetFileSize(FILE* executableFile);
 
+
+#ifdef STEP_VALIDATION
+
+ERROR_CODES DumpStack(Processor* PROCESSOR, FILE* logFile);
+ERROR_CODES DumpRAM(Processor* PROCESSOR, FILE* logFile);
+ERROR_CODES DumpIP(Processor* PROCESSOR, FILE* logFile);
+ERROR_CODES DumpRegs(Processor* PROCESSOR, FILE* logFile);
+ERROR_CODES StepDump(Processor* PROCESSOR, int stepCount, FILE* logFile);
+
+#endif // STEP_VALIDATION
 
 #endif // PROCESSOR_H
