@@ -16,10 +16,14 @@
 #include "..\Disassembler\Disassembler.h"
 
 
+//{--------------------------------------------------------Constants-----------------------------------------------------------------------
+
 const int MAX_CD_PATH_SIZE 		   = 256;
 const int MAX_DIRECTORY_SIZE 	   = 32;
 const int MAX_PROCESS_NAME_LENGTH  = 12;
 const int MAX_EXECUTABLE_PATH_SIZE = 64; 
+
+//}----------------------------------------------------------------------------------------------------------------------------------------
 
 
 /**
