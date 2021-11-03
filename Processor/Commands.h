@@ -23,14 +23,6 @@ const int          MAX_CODES_CAPACITY = 4096;        // Increase if you want
 const Version_t    VERSION            = 2;           // Version 2.0
 const Signature_t  SIGNATURE          = 0x44454421;  // is literally 'DED!'
 
-
-enum ARG_TYPES {
-	
-	NO_ARGS    = 0,
-	LABEL_ARG  = 1,
-	MEMORY_ARG = 3
-};
-
 //}----------------------------------------------------------------------------------------------------------------------------------------
 
 

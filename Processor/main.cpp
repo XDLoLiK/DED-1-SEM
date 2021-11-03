@@ -21,7 +21,7 @@ int main(void)
 		char command[MAX_PROCESS_NAME_LENGTH] = "";
 		scanf(" %s", command);
 
-		if (strcmp(command, "exit") == 0) 
+		if (strcmp(command, "zzz") == 0) 
 			running = false;
 
 		else if (strcmp(command, "fas") == 0) 
