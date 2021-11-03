@@ -10,11 +10,11 @@
 																		\
 	else if (strcmp(token, #cmd) == 0) {						 		\
 																		\
-		if (argsType == 0 /* NO_ARGS */) {								\
+		if (argsType == NO_ARGS) {										\
 			AddInstruction(CMD_##cmd, AssemblyInfo);					\
 		}																\
 																		\
-		else if (argsType == 1 /* LABEL ARG */) {						\
+		else if (argsType == LABEL_ARG) {								\
 																		\
 			AddInstruction(CMD_##cmd, AssemblyInfo);					\
 																		\
@@ -24,7 +24,7 @@
 			CompileLabel(labelName, AssemblyInfo);						\
 		}																\
 																		\
-		else if (argsType  == 2 /* MEMORY_ARG */) {						\
+		else if (argsType  == MEMORY_ARG) {								\
 																		\
 			char argument[MAX_ARG_LENGTH] = "";							\
 			sscanf(currentStr, "%*s %[^\n]", argument);					\
@@ -232,20 +232,20 @@ ERROR_CODES CompileArgument(char* argument, char commandNum, Asm_info_t* Assembl
 
 	// REG ARG HANDLER
 
-	Argument_t regArg = (Argument_t) POISON_NUMBER;
+	Argument_t regArg = (Argument_t) NEUTRAL;
 	CompileReg(argument, &regArg, AssemblyInfo);
 
-	if (regArg != (Argument_t) POISON_NUMBER) {
+	if (regArg != (Argument_t) NEUTRAL) {
 		argBits += REG_ARG;
 		AddArgument(regArg, AssemblyInfo);
 	}
 
 	// IMMEDIATE CONST HANDLER
 
-	Argument_t immConst = (Argument_t) POISON_NUMBER;
+	Argument_t immConst = (Argument_t) NEUTRAL;
 	CompileConst(argument, &immConst, AssemblyInfo);
 
-	if (immConst != (Argument_t) POISON_NUMBER) {
+	if (immConst != (Argument_t) NEUTRAL) {
 		argBits += IMM_CONST;
 		AddArgument(immConst, AssemblyInfo);
 	}
