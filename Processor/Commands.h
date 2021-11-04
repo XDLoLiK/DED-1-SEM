@@ -8,6 +8,7 @@
 
 
 #include <inttypes.h>
+#include <math.h>
 
 #include "..\Stack\Config.h"
 
@@ -19,9 +20,12 @@ typedef unsigned char Instruction_t;
 typedef uint64_t      Version_t;
 typedef int			  Signature_t;
 
+
 const int          MAX_CODES_CAPACITY = 4096;        // Increase if you want
 const Version_t    VERSION            = 2;           // Version 2.0
 const Signature_t  SIGNATURE          = 0x44454421;  // is literally 'DED!'
+
+const int MAX_STRING_LENGTH = 64;
 
 //}----------------------------------------------------------------------------------------------------------------------------------------
 
@@ -34,6 +38,16 @@ const Instruction_t IMM_CONST 	  = (Instruction_t) (1 << 5); // 00100000
 const Instruction_t COMMAND_BITS  = (Instruction_t) (1 << 5); // 00100000
 
 //}----------------------------------------------------------------------------------------------------------------------------------------
+
+
+//{--------------------------------------------------------Arg-Types----------------------------------------------------------------------- 
+
+const int NO_ARGS 	 = 0;
+const int LABEL_ARG  = 1;
+const int MEMORY_ARG = 2;
+const int STRING_ARG = 3;
+
+//}---------------------------------------------------------------------------------------------------------------------------------------- 
 
 
 //{--------------------------------------------------------Commands-Numbers----------------------------------------------------------------

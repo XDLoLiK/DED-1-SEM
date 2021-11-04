@@ -1,0 +1,66 @@
+/*
+
+~ LANGUAGE DOCUMENTATION (FASM)
+
+
+$	COMMANDS LIST (<arg> stands for whatever argument you can use):
+
+	1.
+
+		SYNTAXIS: push <arg>
+
+		COMMAND CODE: 10
+
+		ARGUMENT TYPE: MENORY_ARG
+
+		DESCRIPTION: puts <arg> value into stack
+
+	2.
+
+		SYNTAXIS: pop <arg>
+
+		COMMAND CODE: 11
+
+		ARGUMENT TYPE: MENORY_ARG
+
+		DESCRIPTION: removes the top stack element and puts it into place where <arg> points
+
+	3.
+
+		SYNTAXIS: mul
+
+		COMMAND CODE: 13
+
+		ARGUMENT TYPE: NO_ARGS
+
+		DESCRIPTION: multiplies the top stack element by the second
+		             stack element and pops them both (pushes the result instead)
+
+	4.
+
+		SYNTAXIS: div
+
+		COMMAND CODE: 14
+
+		ARGUMENT TYPE: NO_ARGS
+
+		DESCRIPTION: divides the top stack element by the second
+		             stack element and pops them both (pushes the result instead)
+
+
+$	ARGUMENT TYPES:
+
+	1. NO_ARGS    - instruction has no args
+
+	2. LABEL_ARG  - the argument is label
+
+	3. MEMORY_ARG - the argument affects memory (RAM, stack, regs)
+
+
+$	ADDITIONAL INFO:
+	
+	1. you only can push positive numbers, however "in" accepts negatives as well
+
+	2. numbers are 
+
+*/

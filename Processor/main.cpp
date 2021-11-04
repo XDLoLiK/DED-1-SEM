@@ -26,8 +26,8 @@ int main(void)
 
 		else if (strcmp(command, "fas") == 0) 
 			ON_COMPILE();
-
-		else if (strcmp(command, "dick") == 0) 
+      													// rename
+		else if (strcmp(command, "dick") == 0) 			// refactor execute (without go)
 			ON_DECOMPILE();
 
 		else if (strcmp(command, "go") == 0) 
