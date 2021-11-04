@@ -25,73 +25,6 @@ const int NEUTRAL                = 66666;
 //}---------------------------------------------------------------------------------------------------------------------------------------- 
 
 
-//{--------------------------------------------------------Arg-Types----------------------------------------------------------------------- 
-
-const int NO_ARGS 	 = 0;
-const int LABEL_ARG  = 1;
-const int MEMORY_ARG = 2;
-
-//}---------------------------------------------------------------------------------------------------------------------------------------- 
-
-
-//{--------------------------------------------------------Assembly-info-struct------------------------------------------------------------
-
-
-/**
- * @brief      Gathers all the compilation info
- */
-typedef struct asm_info_t {
-	
-	size_t 	  	   curIP 	 = 0;	 
-	size_t	  	   curStr 	 = 0;
-	size_t    	   curPass   = 1;
-	const size_t   PASSES    = 2;
-	Instruction_t* codes  	 = nullptr;
-	bool           hasErrors = false;
-
-} Asm_info_t;
-
-//}----------------------------------------------------------------------------------------------------------------------------------------
-
-
-//{--------------------------------------------------------Compilation-Warnings-Logs-------------------------------------------------------
-
-#define RET_COMPILATION_ERROR(ERROR_NAME, TOKEN) {					\
-																	\
-  	if (AssemblyInfo->curPass == AssemblyInfo->PASSES) {			\
-		LOG_COMPILATION_ERROR(ERROR_NAME, TOKEN);					\
-	}																\
-																	\
-	return ERROR_NAME;												\
-}																	\
-																	\
-do {																\
-																	\
-} while (0)
-
-
-#define LOG_COMPILATION_ERROR(ERROR_NAME, TOKEN) {							\
-																			\
-	WARNING_LOG(ERROR_NAME, ERROR);											\
-																			\
-	AssemblyInfo->hasErrors = true;											\
-																			\
-	fprintf(stderr, "%8llu | %s\n", AssemblyInfo->curStr + 1, TOKEN);		\
-	printf("         | ^");													\
-																			\
-	for (size_t letter = 0; letter < strlen(TOKEN) - 1; ++letter)		 	\
-		printf("~");														\
-																			\
-	printf("\n");															\
-}																			\
-																			\
-do {																		\
-																			\
-} while (0)
-
-//}----------------------------------------------------------------------------------------------------------------------------------------
-
-
 //{--------------------------------------------------------Label-Fixups-Structs------------------------------------------------------------
 
 typedef struct label_t {
@@ -108,7 +41,66 @@ struct fixups_t {
 	size_t   labelsCapacity		= 100;
 	size_t   labelsCount 		= 0;
 
-} static FIXUPS;
+};
+
+//}----------------------------------------------------------------------------------------------------------------------------------------
+
+
+//{--------------------------------------------------------Assembly-info-struct------------------------------------------------------------
+
+
+/**
+ * @brief      Gathers all the compilation info
+ */
+typedef struct asm_info_t {
+	
+	size_t 	  	   curIP 	 = 0;	 
+	size_t	  	   curStr 	 = 0;
+	size_t    	   curPass   = 1;
+	const size_t   PASSES    = 2;
+	Instruction_t* codes  	 = nullptr;
+	bool           hasErrors = false;
+	fixups_t       FIXUPS    = {};
+
+} Asm_info_t;
+
+//}----------------------------------------------------------------------------------------------------------------------------------------
+
+
+//{--------------------------------------------------------Compilation-Warnings-Logs-------------------------------------------------------
+
+#define RET_COMPILATION_ERROR(ERROR_NAME, TOKEN) {							\
+																			\
+  	if (AssemblyInfo->curPass == AssemblyInfo->PASSES) {					\
+		LOG_COMPILATION_ERROR(ERROR_NAME, TOKEN);							\
+	}																		\
+																			\
+	return ERROR_NAME;														\
+}																			\
+																			\
+do {																		\
+																			\
+} while (0)
+
+
+#define LOG_COMPILATION_ERROR(ERROR_NAME, TOKEN) {							\
+																			\
+	WARNING_LOG(ERROR_NAME, ERROR);											\
+																			\
+	AssemblyInfo->hasErrors = true;											\
+																			\
+	fprintf(stderr, "%8llu | %s\n", AssemblyInfo->curStr + 1, TOKEN);		\
+	printf("         | ^");													\
+																			\
+	for (size_t letter = 0; letter < strlen(TOKEN) - 1; ++letter)		 	\
+		fprintf(stderr, "~");												\
+																			\
+	fprintf(stderr, "\n");													\
+}																			\
+																			\
+do {																		\
+																			\
+} while (0)
 
 //}----------------------------------------------------------------------------------------------------------------------------------------
 
@@ -193,11 +185,12 @@ ERROR_CODES UpdateLables(char* labelName, Asm_info_t* AssemblyInfo);
 /**
  * @brief      Searches for the label
  *
- * @param[in]  labelName  The label name
+ * @param[in]  labelName     The label name
+ * @param      AssemblyInfo  The assembly information
  *
  * @return     Pointer to the label (nullptr if not found)
  */
-Label_t* SearchLabel(char* labelName);
+Label_t* SearchLabel(char* labelName, Asm_info_t* AssemblyInfo);
 
 
 /**
@@ -224,7 +217,7 @@ ERROR_CODES CompileLabel(char* labelName, Asm_info_t* AssemblyInfo);
  *
  * @return     Number of symbols
  */
-size_t StringCount(char* str, char symbol);
+size_t StringCountChar(char* str, char symbol);
 
 
 /**

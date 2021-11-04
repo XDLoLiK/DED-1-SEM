@@ -96,7 +96,7 @@ ERROR_CODES ComipleString(char* currentStr, Asm_info_t* AssemblyInfo)
 
 	if (strchr(token, ':') != nullptr) {
 
-		if (SearchLabel(token) == nullptr) {
+		if (SearchLabel(token, AssemblyInfo) == nullptr) {
 			UpdateLables(token, AssemblyInfo);
 		}
 	}
@@ -123,7 +123,7 @@ ERROR_CODES CompileLabel(char* labelName, Asm_info_t* AssemblyInfo)
 	assert(labelName);
 	assert(AssemblyInfo);
 
-	Label_t* label = SearchLabel(labelName);
+	Label_t* label = SearchLabel(labelName, AssemblyInfo);
 
 	if (label != nullptr) {
 		AddArgument(label->jumpPoint, AssemblyInfo);
@@ -144,14 +144,14 @@ ERROR_CODES CompileLabel(char* labelName, Asm_info_t* AssemblyInfo)
 }
 
 
-Label_t* SearchLabel(char* labelName)
+Label_t* SearchLabel(char* labelName, Asm_info_t* AssemblyInfo)
 {
 	assert(labelName);
 
-	for (size_t i = 0; i < FIXUPS.labelsCount; ++i) {
+	for (size_t i = 0; i < AssemblyInfo->FIXUPS.labelsCount; ++i) {
 
-		if (strcmp(FIXUPS.labelsList[i].name, labelName) == 0) {
-			return &FIXUPS.labelsList[i];
+		if (strcmp(AssemblyInfo->FIXUPS.labelsList[i].name, labelName) == 0) {
+			return &AssemblyInfo->FIXUPS.labelsList[i];
 		}
 	}
 
@@ -166,23 +166,23 @@ ERROR_CODES UpdateLables(char* labelName, Asm_info_t* AssemblyInfo)
 
 	labelName[strlen(labelName) - 1] = '\0';
 
-	if (FIXUPS.labelsCount >= FIXUPS.labelsCapacity) {
+	if (AssemblyInfo->FIXUPS.labelsCount >= AssemblyInfo->FIXUPS.labelsCapacity) {
 
-		Label_t* newptr = (Label_t*) realloc(FIXUPS.labelsList, (FIXUPS.labelsCapacity + 10) * sizeof (Label_t));
+		Label_t* newptr = (Label_t*) realloc(AssemblyInfo->FIXUPS.labelsList, (AssemblyInfo->FIXUPS.labelsCapacity + 10) * sizeof (Label_t));
 
 		if (newptr == nullptr) {
 			RETURN(ALLOCATION_ERROR);
 		}
 
 		else {
-			FIXUPS.labelsList = newptr;
+			AssemblyInfo->FIXUPS.labelsList = newptr;
 		}	
 	}
 
-	FIXUPS.labelsCount += 1;
+	AssemblyInfo->FIXUPS.labelsCount += 1;
 
-	strcpy(FIXUPS.labelsList[FIXUPS.labelsCount - 1].name, labelName);
-	FIXUPS.labelsList[FIXUPS.labelsCount - 1].jumpPoint = AssemblyInfo->curIP;
+	strcpy(AssemblyInfo->FIXUPS.labelsList[AssemblyInfo->FIXUPS.labelsCount - 1].name, labelName);
+	AssemblyInfo->FIXUPS.labelsList[AssemblyInfo->FIXUPS.labelsCount - 1].jumpPoint = AssemblyInfo->curIP;
 
 	RETURN(NO_ERROR);
 }
@@ -262,7 +262,7 @@ bool IsRam(char* argument, Asm_info_t* AssemblyInfo)
 
 	if (strchr(argument, ']') > strchr(argument, '[')) {
 
-		if (StringCount(argument, '[') == 1 && StringCount(argument, ']') == 1) {
+		if (StringCountChar(argument, '[') == 1 && StringCountChar(argument, ']') == 1) {
 			return true;
 		}
 		
@@ -379,7 +379,7 @@ ERROR_CODES StripCode(File* sourceFile)
 
 //{--------------------------------------------------------String-Functions----------------------------------------------------------------
 
-size_t StringCount(char* str, char symbol)
+size_t StringCountChar(char* str, char symbol)
 {
 	assert(str);
 
