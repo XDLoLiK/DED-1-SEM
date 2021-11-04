@@ -23,8 +23,17 @@ SolveQuadratic:
 	push 0
 	ja NoRoots
 
-	ret
+	push dx
+	push 0
+	je OneRoot
 
+	push dx
+	sqrt
+	pop dx
+
+	jmp TwoRoots	
+
+	ret
 
 CountDiscriminant:
 
@@ -40,11 +49,75 @@ CountDiscriminant:
 
 	sub
 	pop dx
-
+	
 	ret
 
 
 NoRoots:
 	push 0
 	out
+	pop 1
+	hlt
+
+
+InfRoots:
+	push 1
+	push 0
+	sub
+	out
+	pop 1
+	hlt
+
+
+OneRoot:
+	push cx
+	push 0
+	je InfRoots
+
+	push 2
+	push ax
+	mul	
+
+	push bx
+	push 0
+	sub
+
+	div
+	out
+	pop 1
+	hlt
+
+TwoRoots:
+	push 2
+	push ax
+	mul
+
+	push bx
+	push 0
+	sub
+
+	push dx
+	add
+
+	div
+	out
+	pop 1
+
+	push 2
+	push ax
+	mul
+
+	push bx
+	push 0
+	sub
+
+	push dx
+	push 0
+	sub
+	add
+
+	div
+	out
+	pop 1
+
 	hlt

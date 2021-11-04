@@ -1,0 +1,75 @@
+	push 0
+	pop ax ;x
+	push 0
+	pop bx ;y
+	push 900
+	pop cx ;radius
+	push 300 
+	pop [0] ;width
+	push 300 
+	pop [1] ;height
+	push 150 
+	pop [2] ;x centre
+	push 150 
+	pop [3] ;y centre
+
+	call DrawCircle
+	drw
+	hlt
+
+
+DrawCircle:
+	
+	call SetXaxes
+	push ax
+	push 1
+	add
+	pop ax
+	push ax
+	push [0]
+	jbe DrawCircle
+	push bx
+	push 1
+	add
+	pop bx
+	push 0
+	pop ax
+	push bx
+	push [1]
+	jbe DrawCircle
+	ret
+
+
+SetXaxes:
+
+	push ax
+	push [2]
+	sub
+	push ax
+	push [2]
+	sub
+	mul
+	push bx
+	push [3]
+	sub
+	push bx
+	push [3]
+	sub
+	mul
+	add
+	push cx
+	jbe SetColor
+	ret
+
+SetColor:
+	push 1024
+	push ax
+	push bx
+	push [0]
+	mul
+	add
+	add
+	pop dx
+	push 1
+	pop [dx]
+	ret
