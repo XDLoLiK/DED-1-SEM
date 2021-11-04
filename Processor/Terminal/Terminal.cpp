@@ -30,40 +30,34 @@ ERROR_CODES ON_COMPILE() {
 
 ERROR_CODES ON_DECOMPILE() {										
 																	
-	File executableFile = {};
+	char executablePath[MAX_EXECUTABLE_PATH_SIZE] = {};
 
-	if (scanf(" %s.cum", executableFile.path) != 1) {
+	if (scanf(" %s.cum", executablePath) != 1) {
 		RETURN(SCAN_ERROR);
 	}
 
-	if (IS_OK(File_ctor(&executableFile))) {
-		Decompile(&executableFile);
-	}
-
 	else {
-		RETURN(DECOMPILATION_ERROR);
+		Decompile(executablePath);
 	}
-
-	File_dtor(&executableFile);
 
 	RETURN(NO_ERROR);
 }
 
 
 ERROR_CODES ON_EXECUTE() {  										
-																
-	Processor M1 = {};											
-																
-	char executablePath[MAX_EXECUTABLE_PATH_SIZE] = "";					
-																
-	if (scanf(" %s.cum", executablePath) != 1) {				
-		RETURN(SCAN_ERROR);							
-	}															
-																
-	else {														
-																
-		FILE* executableFile = fopen(executablePath, "rb");		
-																
+
+	Processor M1 = {};
+
+	char executablePath[MAX_EXECUTABLE_PATH_SIZE] = "";
+
+	if (scanf(" %s.cum", executablePath) != 1) {
+		RETURN(SCAN_ERROR);
+	}
+
+	else {
+
+		FILE* executableFile = fopen(executablePath, "rb");
+
 		if (executableFile != nullptr) {						
 																
 			ProcessorCtor(&M1);				
