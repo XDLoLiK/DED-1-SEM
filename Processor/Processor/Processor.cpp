@@ -18,6 +18,8 @@
 //{----------------------------------------------------------------------------------------------------------------------------------------
 
 
+//{--------------------------------------------------------Main-Execution-Function---------------------------------------------------------
+
 ERROR_CODES Execute(Processor* PROCESSOR, FILE* executableFile)
 {
 	assert(PROCESSOR);
@@ -66,6 +68,10 @@ ERROR_CODES Execute(Processor* PROCESSOR, FILE* executableFile)
 	RETURN(NO_ERROR);
 }
 
+//}----------------------------------------------------------------------------------------------------------------------------------------
+
+
+//{--------------------------------------------------------Processor-Struct-Management-----------------------------------------------------
 
 ERROR_CODES ProcessorCtor(Processor* PROCESSOR)
 {
@@ -77,6 +83,10 @@ ERROR_CODES ProcessorCtor(Processor* PROCESSOR)
 	RAM 	 = (StackElem_t*) calloc(MEM_SIZE, sizeof (char));
 	VIDEOMEM = (VideoMem_t*)  calloc(MEM_SIZE, sizeof (char));    
 	IP       = sizeof SIGNATURE + sizeof VERSION;	
+
+	if (VIDEOMEM == nullptr || RAM == nullptr) {
+		RETURN(CONSTRUCTION_ERROR);
+	}
 
 	for (size_t i = 0; i < REGS_NUM; ++i) {
 		REGS[i] = 0;
@@ -113,6 +123,10 @@ void ProcessorDtor(Processor* PROCESSOR)
 	VIDEOMEM = (VideoMem_t*)   	POISON_POINTER;
 }
 
+//}----------------------------------------------------------------------------------------------------------------------------------------
+
+
+//{--------------------------------------------------------Working-With-Exec-File----------------------------------------------------------
 
 ERROR_CODES CheckFile(Instruction_t* codes)
 {
@@ -143,6 +157,10 @@ size_t GetFileSize(FILE* executableFile)
 	return fileSize;
 }
 
+//}----------------------------------------------------------------------------------------------------------------------------------------
+
+
+//{--------------------------------------------------------Step-Dump-----------------------------------------------------------------------
 
 #ifdef STEP_VALIDATION
 
@@ -293,3 +311,5 @@ ERROR_CODES DumpStack(Processor* PROCESSOR, FILE* logFile)
 }
 
 #endif // STEP_VALIDATION
+
+//}----------------------------------------------------------------------------------------------------------------------------------------
