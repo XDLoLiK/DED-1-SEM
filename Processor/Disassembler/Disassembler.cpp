@@ -5,28 +5,12 @@
 #include "Disassembler.h"
 
 
-#define DEF_CMD(cmd, num, argsType, ...) {      			\
-															\
-	case (CMD_##cmd):										\
-															\
-		printf("%s\n", #cmd);								\
-															\
-		if (argsType == NO_ARGS) {							\
-			WriteInstruction(#cmd, DisassemblyInfo);		\
-			fprintf(DisassemblyInfo->disasmFile, "\n");		\
-		}													\
-															\
-		else if (argsType == LABEL_ARG) {					\
-			WriteInstruction(#cmd, DisassemblyInfo);		\
-			AppendLabels(DisassemblyInfo);					\
-		}													\
-															\
-		else if (argsType == MEMORY_ARG) {					\
-			WriteInstruction(#cmd, DisassemblyInfo);		\
-			WriteArgument(CMD_##cmd, DisassemblyInfo);    	\
-		}													\
-															\
-		break;												\
+#define DEF_CMD(cmd, num, argsType, ...) {      							\
+																			\
+	case (CMD_##cmd):														\
+																			\
+		HandleInstruction(#cmd, CMD_##cmd, argsType DisassemblyInfo);		\
+		break;																\
 }
 
 
@@ -67,6 +51,30 @@ ERROR_CODES Decompile(char* executablePath)
 	printf(">>> Decompilation finished in %g\n", DecompilationTime);
 
 	RETURN(NO_ERROR);
+}
+
+
+ERROR_CODES HandleInstruction(const char* command, int cmdNum, int argsType, Disasm_info_t* DisassemblyInfo)
+{
+	assert(command);
+	assert(DisassemblyInfo);
+
+	if (argsType == NO_ARGS) {							
+		WriteInstruction(command, DisassemblyInfo);		
+		fprintf(DisassemblyInfo->disasmFile, "\n");		
+	}													
+															
+	else if (argsType == LABEL_ARG) {					
+		WriteInstruction(command, DisassemblyInfo);		
+		AppendLabels(DisassemblyInfo);					
+	}													
+															
+	else if (argsType == MEMORY_ARG) {					
+		WriteInstruction(command, DisassemblyInfo);		
+		WriteArgument(cmdNum, DisassemblyInfo);    	
+	}
+
+	RETURN(NO_ERROR);													
 }
 
 
