@@ -47,6 +47,183 @@ $	COMMANDS LIST (<arg> stands for whatever argument you can use):
 		DESCRIPTION: divides the top stack element by the second
 		             stack element and pops them both (pushes the result instead)
 
+	5.
+
+		SYNTAXIS: add
+
+		COMMAND CODE: 12 
+
+		ARGUMENT TYPE: NO_ARGS
+
+		DESCRIPTION: adds the top stack element to the second stack element
+					 and pops them both (pushes the result instead)
+
+	6.
+
+		SYNTAXIS: sub 
+
+		COMMAND CODE: 15
+
+		ARGUMENT TYPE: NO_ARGS
+
+		DESCRIPTION: substracts the second stack element from the top stack
+					 element and pops them both (pushes the result instead)
+
+	7.
+
+		SYNTAXIS: in
+
+		COMMAND CODE: 20
+
+		ARGUMENT TYPE: NO_ARGS
+
+		DESCRIPTION: scans a value from the user and pushes it to stack
+
+	8.
+
+		SYNTAXIS: out
+
+		COMMAND CODE: 21 
+
+		ARGUMENT TYPE: NO_ARGS
+
+		DESCRIPTION: prints out the top stack element to the console
+
+	9.
+
+		SYNTAXIS: jmp
+
+		COMMAND CODE: 2 
+
+		ARGUMENT TYPE: LABEL_ARG
+
+		DESCRIPTION: jumps to a lable
+
+	10.
+
+		SYNTAXIS: ja
+
+		COMMAND CODE: 3
+
+		ARGUMENT TYPE: LABEL_ARG
+
+		DESCRIPTION: jumps to a lable if top stack element is above
+					 the element right after it (and pops them both)
+
+	11.
+
+		SYNTAXIS: jb
+
+		COMMAND CODE: 4
+
+		ARGUMENT TYPE: LABEL_ARG
+
+		DESCRIPTION: jumps to a lable if top stack element is bellow
+					 the element right after it (and pops them both)
+
+	12.
+
+		SYNTAXIS: je 
+
+		COMMAND CODE: 5 
+
+		ARGUMENT TYPE: LABEL_ARG
+
+		DESCRIPTION: jumps to a lable if top stack element equals
+					 the element right after it (and pops them both)
+
+	13.
+
+		SYNTAXIS: jae
+
+		COMMAND CODE: 6 
+
+		ARGUMENT TYPE: LABEL_ARG
+
+		DESCRIPTION: jumps to a lable if top stack element is above or equals
+					 the element right after it (and pops them both)
+
+	14.
+
+		SYNTAXIS: jbe
+
+		COMMAND CODE: 7 
+
+		ARGUMENT TYPE: LABEL_ARG
+
+		DESCRIPTION: jumps to a lable if top stack element is bellow or equals
+					 the element right after it (and pops them both)
+
+	15.
+
+		SYNTAXIS: ret
+
+		COMMAND CODE: 8 
+
+		ARGUMENT TYPE: NO_ARGS
+
+		DESCRIPTION: jumps to the address which is the top stack element
+
+	16.
+
+		SYNTAXIS: call
+
+		COMMAND CODE: 9
+
+		ARGUMENT TYPE: LABEL_ARG
+
+		DESCRIPTION: jumps to a lable and pushes return address into stack
+
+	17.
+
+		SYNTAXIS: hlt
+
+		COMMAND CODE: 0 
+
+		ARGUMENT TYPE: NO_ARGS
+
+		DESCRIPTION: marks the end of the program
+
+	18.
+
+		SYNTAXIS: nop
+
+		COMMAND CODE: 1
+
+		ARGUMENT TYPE: NO_ARGS
+
+		DESCRIPTION: literally no operation
+
+	19.
+
+		SYNTAXIS: drw
+
+		COMMAND CODE: 17 
+
+		ARGUMENT TYPE: NO_ARGS
+
+		DESCRIPTION: outdraws every video memory byte
+
+	20.
+
+		SYNTAXIS: pb
+
+		COMMAND CODE: 18
+
+		ARGUMENT TYPE: MEMORY_ARG
+
+		DESCRIPTION: puts a single color byte into video memory
+
+	21.
+
+		SYNTAXIS: sqrt
+
+		COMMAND CODE: 19
+
+		ARGUMENT TYPE: NO_ARGS
+
+		DESCRIPTION: counts sqrt of a top stack number
+
 
 $	ARGUMENT TYPES:
 
@@ -57,10 +234,37 @@ $	ARGUMENT TYPES:
 	3. MEMORY_ARG - the argument affects memory (RAM, stack, regs)
 
 
+$	SAMPLE PROGRAM (squares of numbers from 0 to 10):
+
+		call Squares
+		hlt
+
+	Squares:
+
+		push 0
+		pop ax
+	next:
+		push ax
+		push 10
+		jb stop
+		push ax
+		push ax
+		mul
+		out
+		pop 1
+		push ax
+		push 1
+		add
+		pop ax
+		jmp next
+	stop:
+		ret
+
+
 $	ADDITIONAL INFO:
 	
 	1. you only can push positive numbers, however "in" accepts negatives as well
 
-	2. numbers are 
+	2. you get a negative number by soing this: push <num>, push 0, sub (ne bug a ficha)
 
 */
