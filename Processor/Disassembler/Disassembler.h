@@ -66,7 +66,7 @@ FILE* CreateOutFile(const char* sourcePath);
  *
  * @return     The error codes.
  */
-ERROR_CODES CheckExecutable(Disasm_info_t* DisassemblyInfo);
+ERROR_CODES CheckSignature(Disasm_info_t* DisassemblyInfo);
 
 
 
@@ -143,6 +143,19 @@ Label_t* FindLabel(Disasm_info_t* DisassemblyInfo);
  * @return     The error's code
  */
 ERROR_CODES AppendLabels(Disasm_info_t* DisassemblyInfo);
+
+
+/**
+ * @brief      Handles the instrucrion
+ *
+ * @param[in]  command          The command
+ * @param[in]  cmdNum           The command number
+ * @param[in]  argsType         The arguments type
+ * @param[in]  DisassemblyInfo  The disassembly information
+ *
+ * @return     The error's code
+ */
+ERROR_CODES HandleInstruction(const char* command, Instruction_t cmdNum, int argsType, Disasm_info_t* DisassemblyInfo);
 
 
 #endif // DIDASSEMBLER_H

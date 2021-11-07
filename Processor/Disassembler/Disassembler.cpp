@@ -8,11 +8,12 @@
 #define DEF_CMD(cmd, num, argsType, ...) {      							\
 																			\
 	case (CMD_##cmd):														\
-																			\
-		HandleInstruction(#cmd, CMD_##cmd, argsType DisassemblyInfo);		\
+		HandleInstruction(#cmd, CMD_##cmd, argsType, DisassemblyInfo);		\
 		break;																\
 }
 
+
+//{----------------------------------------------------------------------------------------------------------------------------------------
 
 ERROR_CODES Decompile(char* executablePath)
 {
@@ -28,7 +29,7 @@ ERROR_CODES Decompile(char* executablePath)
 		return DECOMPILATION_ERROR;
 	}
 
-	if (!IS_OK(CheckExecutable(&DisassemblyInfo))) {
+	if (!IS_OK(CheckSignature(&DisassemblyInfo))) {
 		return DECOMPILATION_ERROR;
 	}
 
@@ -54,7 +55,7 @@ ERROR_CODES Decompile(char* executablePath)
 }
 
 
-ERROR_CODES HandleInstruction(const char* command, int cmdNum, int argsType, Disasm_info_t* DisassemblyInfo)
+ERROR_CODES HandleInstruction(const char* command, Instruction_t cmdNum, int argsType, Disasm_info_t* DisassemblyInfo)
 {
 	assert(command);
 	assert(DisassemblyInfo);
@@ -65,8 +66,12 @@ ERROR_CODES HandleInstruction(const char* command, int cmdNum, int argsType, Dis
 	}													
 															
 	else if (argsType == LABEL_ARG) {					
-		WriteInstruction(command, DisassemblyInfo);		
-		AppendLabels(DisassemblyInfo);					
+		WriteInstruction(command, DisassemblyInfo);
+
+		if (FindLabel(DisassemblyInfo) == nullptr) {
+			AppendLabels(DisassemblyInfo);
+		}
+
 	}													
 															
 	else if (argsType == MEMORY_ARG) {					
@@ -88,9 +93,9 @@ ERROR_CODES WriteString(Disasm_info_t* DisassemblyInfo)
 		WriteLabel(DisassemblyInfo);	
 	} 
 
-	switch (DisassemblyInfo->codes[DisassemblyInfo->curIP]) {
+	switch (DisassemblyInfo->codes[DisassemblyInfo->curIP] % COMMAND_BITS) {
 
-		#include "..\DEF_CMD.h" //->
+		#include "..\DEF_CMD.h" // ->
 		// case (CMD_##cmd): ...
 
 		default:
@@ -124,23 +129,25 @@ ERROR_CODES AppendLabels(Disasm_info_t* DisassemblyInfo)
 
 		Label_t* newptr = (Label_t*) realloc(DisassemblyInfo->FIXUPS.labelsList, (DisassemblyInfo->FIXUPS.labelsCapacity + 10) * sizeof (Label_t));
 
-		DisassemblyInfo->FIXUPS.labelsCapacity += 10;
-
 		if (newptr == nullptr) {
 			RETURN(ALLOCATION_ERROR);
 		}
 
 		else {
+			DisassemblyInfo->FIXUPS.labelsCapacity += 10;
 			DisassemblyInfo->FIXUPS.labelsList = newptr;
 		}	
 	}
 
 	DisassemblyInfo->FIXUPS.labelsCount += 1;
 
+	char label   [MAX_LABEL_NAME_LENGTH] = "label";
 	char labelNum[MAX_LABEL_NAME_LENGTH] = "";
-	itoa((int) DisassemblyInfo->FIXUPS.labelsCount, labelNum, 10);
 
-	strcpy(DisassemblyInfo->FIXUPS.labelsList[DisassemblyInfo->FIXUPS.labelsCount - 1].name, labelNum);
+	itoa((int) DisassemblyInfo->FIXUPS.labelsCount, labelNum, 10);
+	strcat(label, labelNum);
+
+	strcpy(DisassemblyInfo->FIXUPS.labelsList[DisassemblyInfo->FIXUPS.labelsCount - 1].name, label);
 	DisassemblyInfo->FIXUPS.labelsList[DisassemblyInfo->FIXUPS.labelsCount - 1].jumpPoint = DisassemblyInfo->curIP;
 
 	DisassemblyInfo->curIP += sizeof (Argument_t);
@@ -182,15 +189,15 @@ FILE* CreateOutFile(const char* sourcePath)
 	strcpy(outputPath, sourcePath);				
 	outputPath[strlen(outputPath) - 4] = '\0';	
 	
-	strcat(outputPath, "*.ass");
+	strcat(outputPath, "!.ass");
 
-	FILE* executableFile = fopen(outputPath, "w");
+	FILE* disasmFile = fopen(outputPath, "w");
 	
-	return executableFile;
+	return disasmFile;
 }
 
 
-ERROR_CODES CheckExecutable(Disasm_info_t* DisassemblyInfo)
+ERROR_CODES CheckSignature(Disasm_info_t* DisassemblyInfo)
 {
 	assert(DisassemblyInfo);
 
@@ -204,7 +211,7 @@ ERROR_CODES CheckExecutable(Disasm_info_t* DisassemblyInfo)
 
 	if (* (Version_t*) (DisassemblyInfo->codes + sizeof SIGNATURE) != VERSION) {
 		RETURN(INAPPROPRIATE_VERSION);
-	} 
+	}
 
 	else {
 		fprintf(DisassemblyInfo->disasmFile, "%ld\n", (long) VERSION);
@@ -232,7 +239,10 @@ ERROR_CODES WriteLabel(Disasm_info_t* DisassemblyInfo)
 {
 	assert(DisassemblyInfo);
 
+	Label_t* label = FindLabel(DisassemblyInfo);
+	strcat(label->name, ":");
 
+	fprintf(DisassemblyInfo->disasmFile, "%s\n", label->name);
 
 	RETURN(NO_ERROR);
 }
