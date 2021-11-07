@@ -25,19 +25,19 @@ int main(void)
 			running = false;
 
 		else if (strcmp(command, "fas") == 0) 
-			ON_COMPILE();
-      													// rename
-		else if (strcmp(command, "dick") == 0) 			// refactor execute (without go)
-			ON_DECOMPILE();
+			OnCompile();
+      													
+		else if (strcmp(command, "dick") == 0) 			
+			OnDecompile();
 
 		else if (strcmp(command, "go") == 0) 
-			ON_EXECUTE();
+			OnExecute();
 
 		else if (strcmp(command, "nextdoor") == 0)
-			ON_CHANGE_DIRECTORY(PATH);
+			OnChangeDirectory(PATH);
 
 		else if (strcmp(command, "help") == 0)
-			ON_HELP();
+			OnHelp();
 		
 		else 
 			WARNING_LOG(INAPPROPRIATE_COMMAND, ERROR);
