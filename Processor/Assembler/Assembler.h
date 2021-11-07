@@ -165,6 +165,20 @@ ERROR_CODES CompileInstruction(char* currentStr, Asm_info_t* AssemblyInfo);
  */
 ERROR_CODES ComipleString(char* currentStr, Asm_info_t* AssemblyInfo);
 
+
+/**
+ * @brief         Handles token
+ *
+ * @param[in]     currentStr    The current string
+ * @param[in]     argsType      The arguments type
+ * @param[in]     cmdNum        The command number
+ * @param[in]     command       The command itself
+ * @param[in,out] AssemblyInfo  The assembly information
+ *
+ * @return        The error's code
+ */
+ERROR_CODES HandleToken(char* currentStr, int argsType, Instruction_t cmdNum, const char* command, Asm_info_t* AssemblyInfo);
+
 //}----------------------------------------------------------------------------------------------------------------------------------------
 
 

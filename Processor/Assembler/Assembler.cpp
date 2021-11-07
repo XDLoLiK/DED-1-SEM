@@ -4,36 +4,6 @@
 
 
 #include "Assembler.h"
-
-
-#define DEF_CMD(cmd, num, argsType, ...)								\
-																		\
-	else if (strcmp(token, #cmd) == 0) {						 		\
-																		\
-		if (argsType == NO_ARGS) {										\
-			AddInstruction(CMD_##cmd, AssemblyInfo);					\
-		}																\
-																		\
-		else if (argsType == LABEL_ARG) {								\
-																		\
-			AddInstruction(CMD_##cmd, AssemblyInfo);					\
-																		\
-			char labelName[MAX_LABEL_NAME_LENGTH] = "";					\
-			sscanf(currentStr, "%*s %s", labelName);					\
-																		\
-			CompileLabel(labelName, AssemblyInfo);						\
-		}																\
-																		\
-		else if (argsType  == MEMORY_ARG) {								\
-																		\
-			char argument[MAX_ARG_LENGTH] = "";							\
-			sscanf(currentStr, "%*s %[^\n]", argument);					\
-																		\
-			CompileArgument(argument, CMD_##cmd, AssemblyInfo);			\
-		}																\
-																		\
-		else RET_COMPILATION_ERROR(INAPPROPRIATE_COMMAND, #cmd);		\
-	}
 			
 
 //{--------------------------------------------------Main-Compilation-functions-------------------------------------------------------------
@@ -191,6 +161,51 @@ ERROR_CODES UpdateLables(char* labelName, Asm_info_t* AssemblyInfo)
 
 
 //{--------------------------------------------------------Various-Argument-Types-Handlers-------------------------------------------------
+
+
+ERROR_CODES HandleToken(char* currentStr, int argsType, Instruction_t cmdNum, const char* command, Asm_info_t* AssemblyInfo)
+{
+	assert(command);
+	assert(AssemblyInfo);
+
+	if (argsType == NO_ARGS) {
+		AddInstruction(cmdNum, AssemblyInfo);
+	}
+
+	else if (argsType == LABEL_ARG) {
+
+		AddInstruction(cmdNum, AssemblyInfo);
+
+		char labelName[MAX_LABEL_NAME_LENGTH] = "";
+		sscanf(currentStr, "%*s %s", labelName);
+
+		CompileLabel(labelName, AssemblyInfo);
+	}
+
+	else if (argsType  == MEMORY_ARG) {
+
+		char argument[MAX_ARG_LENGTH] = "";
+		sscanf(currentStr, "%*s %[^\n]", argument);
+
+		CompileArgument(argument, cmdNum, AssemblyInfo);
+	}
+
+	else RET_COMPILATION_ERROR(INAPPROPRIATE_COMMAND, command);
+
+	RETURN(NO_ERROR);
+}
+
+
+//{--------------------------------------------------------DEF-CMD-for-Assembler-----------------------------------------------------------
+
+#define DEF_CMD(cmd, num, argsType, ...)										\
+																				\
+	else if (strcmp(token, #cmd) == 0) {								 		\
+		HandleToken(currentStr, argsType, CMD_##cmd, #cmd, AssemblyInfo);		\
+	}
+
+//}----------------------------------------------------------------------------------------------------------------------------------------
+
 
 ERROR_CODES CompileInstruction(char* currentStr, Asm_info_t* AssemblyInfo)
 {
