@@ -16,7 +16,7 @@
 #include "..\..\general\Errors.h"
 
 
-#define STEP_VALIDATION
+// #define STEP_VALIDATION
 // #define DO_YOU_REALLY_WANNA_DO_THAT
 
 #ifdef ON_DEBUG
@@ -46,6 +46,8 @@ const int MAX_RAM_DEBUG_OUTPUT   = 10;
 
 const int NEUTRAL_NUM            = 66666;
 
+const int WIDTH					 = 150;
+
 //}----------------------------------------------------------------------------------------------------------------------------------------
 
 
@@ -65,6 +67,7 @@ const int NEUTRAL_NUM            = 66666;
 
 #define ARG_SIZE    sizeof (Argument_t)
 #define CMD_SIZE    sizeof (Instruction_t)
+#define VIDEO_SIZE  sizeof (VideoMem_t)
 
 #define ax		    REGS[0]
 #define bx		    REGS[1]
@@ -73,6 +76,7 @@ const int NEUTRAL_NUM            = 66666;
 
 #define ARG_T       Argument_t
 #define INSTR_T     Instruction_t
+#define VIDEOMEM_T  VideoMem_t
 
 //}----------------------------------------------------------------------------------------------------------------------------------------
 
