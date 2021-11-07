@@ -6,7 +6,7 @@
 #include "Terminal.h"
 
 
-ERROR_CODES ON_COMPILE() {
+ERROR_CODES OnCompile() {
 
 	File sourceFile = {};
 
@@ -28,7 +28,7 @@ ERROR_CODES ON_COMPILE() {
 }
 
 
-ERROR_CODES ON_DECOMPILE() {										
+ERROR_CODES OnDecompile() {										
 																	
 	char executablePath[MAX_EXECUTABLE_PATH_SIZE] = {};
 
@@ -44,7 +44,7 @@ ERROR_CODES ON_DECOMPILE() {
 }
 
 
-ERROR_CODES ON_EXECUTE() {  										
+ERROR_CODES OnExecute() {  										
 
 	Processor M1 = {};
 
@@ -77,7 +77,7 @@ ERROR_CODES ON_EXECUTE() {
 }	
 
 
-void ON_HELP() {														
+void OnHelp() {														
 																			
 	printf("\n| ~COMPILATION~\n"											
 		     "| - use fas compiler to compile .ass files\n" 				
@@ -95,24 +95,24 @@ void ON_HELP() {
 }		
 
 
-ERROR_CODES ON_CHANGE_DIRECTORY(char* path) {						
+ERROR_CODES OnChangeDirectory(char* path) {						
 													
 	char dir[MAX_DIRECTORY_SIZE] = "";				
 	scanf(" %s", dir);								
 													
 	if (strcmp("..", dir) == 0) {
-		GO_BACK(path);					
+		GoBack(path);					
 	}
 													
 	else {
-		GO_FORWARD(path, dir);
+		GoForward(path, dir);
 	}
 
 	RETURN(NO_ERROR);
 }
 
 
-ERROR_CODES GO_BACK(char* path) {										
+ERROR_CODES GoBack(char* path) {										
 															
 	char* lastdir = strchr(path, '\\');						
 															
@@ -140,7 +140,7 @@ ERROR_CODES GO_BACK(char* path) {
 }
 
 
-ERROR_CODES GO_FORWARD(char* path, char* directory) {					
+ERROR_CODES GoForward(char* path, char* directory) {					
 												
 	path[strlen(path) - 1] = '\\';				
 	strcat(path, directory);					

@@ -29,7 +29,7 @@ const int MAX_EXECUTABLE_PATH_SIZE = 64;
 /**
  * @brief      Called on help.
  */
-void ON_HELP();
+void OnHelp();
 
 
 /**
@@ -37,7 +37,7 @@ void ON_HELP();
  *
  * @return     The error's code
  */
-ERROR_CODES ON_COMPILE();
+ERROR_CODES OnCompile();
 
 
 /**
@@ -45,7 +45,7 @@ ERROR_CODES ON_COMPILE();
  *
  * @return     The error's code
  */
-ERROR_CODES ON_EXECUTE();
+ERROR_CODES OnExecute();
 
 
 /**
@@ -53,7 +53,7 @@ ERROR_CODES ON_EXECUTE();
  *
  * @return     The error's code
  */
-ERROR_CODES ON_DECOMPILE();	
+ERROR_CODES OnDecompile();	
 
 
 /**
@@ -63,7 +63,7 @@ ERROR_CODES ON_DECOMPILE();
  *
  * @return     The error's code
  */
-ERROR_CODES GO_BACK(char* path);	   	
+ERROR_CODES GoBack(char* path);	   	
 
 
 /**
@@ -73,7 +73,7 @@ ERROR_CODES GO_BACK(char* path);
  *
  * @return     The error's code
  */
-ERROR_CODES ON_CHANGE_DIRECTORY(char* path);
+ERROR_CODES OnChangeDirectory(char* path);
 
 
 /**
@@ -84,7 +84,7 @@ ERROR_CODES ON_CHANGE_DIRECTORY(char* path);
  *
  * @return     The error's code
  */
-ERROR_CODES GO_FORWARD(char* path, char* directory);
+ERROR_CODES GoForward(char* path, char* directory);
 
 
 #endif // PROCESSOR_CONFIG_H
