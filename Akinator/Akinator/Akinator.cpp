@@ -24,6 +24,10 @@ AKINATOR_ERRORS Akinator_Ctor(Akinator_t* akinator)
 	akinator->tree        = treeAkinator; 
 	akinator->currentNode = akinator->tree->root;
 
+	Akinator_LoadDatabase(akinator);
+	
+	Akinator_PrintNodes(akinator->tree->root);
+
 	return AKINATOR_NO_ERROR;
 }
 
@@ -102,20 +106,102 @@ AKINATOR_ERRORS Akinator_DumpTree(Akinator_t* akinator)
 }
 
 
-AKINATOR_ERRORS LoadDatabase(Akinator_t* akinator)
+AKINATOR_ERRORS Akinator_LoadDatabase(Akinator_t* akinator)
 {
 	Logger_assert(akinator && "Pointer must not be NULL");
+
+	FILE* database = fopen("Akinator.database", "r");
+
+	if (database == nullptr)
+		Logger_return(UNABLE_TO_LOAD_DATABASE);
+
+	Akinator_MakeTreeFromDatabase(&(akinator->tree->root), database);
+
+	fclose(database);
+
+	return AKINATOR_NO_ERROR;
+}
+
+
+AKINATOR_ERRORS Akinator_MakeTreeFromDatabase(Node_t** currentNode, FILE* database)
+{
+	char symbol = (char) fgetc(database);
+
+	while (symbol != EOF) {
+
+		if (symbol == '{')
+			break;
+
+		if (symbol == '}')
+			return AKINATOR_NO_ERROR;
+
+		symbol = (char) fgetc(database);
+	}
+
+	if (symbol == EOF)
+		Logger_return(DATABASE_DAMAGED);
+
+	char value[MAX_QUESTION_STRING_LENGTH] = "";
+	int  count = 0;
+
+	fscanf(database, " \"%[^\"]\" %n", value, &count);
+
+	if (count)
+		*currentNode = Akinator_CreateNode(value);
+	else
+		Logger_return(INVALID_DATABASE_VALUE);
+
+	Akinator_MakeTreeFromDatabase(&(*currentNode)->left,  database);
+	Akinator_MakeTreeFromDatabase(&(*currentNode)->right, database);
+}
+
+
+Node_t* Akinator_CreateNode(TreeElem_t nodeValue)
+{
+	Logger_assert(nodeValue && "Invalid value");
+
+	Node_t* newNode = (Node_t*) calloc(1, sizeof (Node_t));
+
+	if (!newNode) {
+		return nullptr;
+	}
+
+	newNode->value = (char*) calloc(MAX_QUESTION_STRING_LENGTH, sizeof (char));
+	strcpy(newNode->value, nodeValue);
+
+	newNode->right = nullptr;
+	newNode->left  = nullptr;
+
+	return newNode;
+}
+
+
+
+void Akinator_PrintNodes(Node_t* node)
+{
+	printf("%s\n", node->value);
+
+	if (!node)
+		return;
+
+	if (node->left)
+		Akinator_PrintNodes(node->left);
+
+	if (node->right)
+		Akinator_PrintNodes(node->right);
+}
+
+
+AKINATOR_ERRORS Akinator_UnloadDatabase(Akinator_t* akinator)
+{
+	Logger_assert(akinator && "Pointer must not be NULL");
+
+	FILE* database = fopen("Akinator.database", "w");
 
 
 
 	return AKINATOR_NO_ERROR;
 }
 
-AKINATOR_ERRORS UnloadDatabase(Akinator_t* akinator)
-{
-	Logger_assert(akinator && "Pointer must not be NULL");
 
 
-
-	return AKINATOR_NO_ERROR;
-}

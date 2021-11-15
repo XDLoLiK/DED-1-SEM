@@ -16,7 +16,12 @@
 
 // #include <TXLib.h>
 
+#include <string.h>
+
 #include "../Tree/Tree.h"
+
+
+const int MAX_QUESTION_STRING_LENGTH = 64;
 
 
 typedef struct akinator_t {
@@ -30,7 +35,10 @@ typedef struct akinator_t {
 
 enum AKINATOR_ERRORS {
 
-	AKINATOR_NO_ERROR = 0,
+	AKINATOR_NO_ERROR          = 0,
+	UNABLE_TO_LOAD_DATABASE    = 1,
+	INVALID_DATABASE_VALUE     = 2,
+	DATABASE_DAMAGED           = 3,
 };
 
 
@@ -116,6 +124,55 @@ AKINATOR_ERRORS Akinator_PlayGame(Akinator_t* akinator);
  * @return     The akinator errors
  */
 AKINATOR_ERRORS Akinator_DumpTree(Akinator_t* akinator);
+
+
+/**
+ * @brief      Loads the database
+ *
+ * @param      akinator  The akinator
+ *
+ * @return     The akinator errors
+ */
+AKINATOR_ERRORS Akinator_LoadDatabase(Akinator_t* akinator);
+
+
+/**
+ * @brief      Unloades the database
+ *
+ * @param      akinator  The akinator
+ *
+ * @return     The akinator errors
+ */
+AKINATOR_ERRORS Akinator_UnloadDatabase(Akinator_t* akinator);
+
+
+/**
+ * @brief      RENAME
+ *
+ * @param      currentNode  The current node
+ * @param      database     The database
+ *
+ * @return     The akinator errors.
+ */
+AKINATOR_ERRORS Akinator_MakeTreeFromDatabase(Node_t** currentNode, FILE* database);
+
+
+/**
+ * @brief      DELETE
+ *
+ * @param      node  The node
+ */
+void Akinator_PrintNodes(Node_t* node);
+
+
+/**
+ * @brief      Creates new node
+ *
+ * @param[in]  nodeValue  The node value
+ *
+ * @return     New node pointer
+ */
+Node_t* Akinator_CreateNode(TreeElem_t nodeValue);
 
 
 #endif // AKINATOR_H
