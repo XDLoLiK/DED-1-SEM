@@ -12,7 +12,7 @@
 #define TREE_CONFIG_H
 
 
-typedef const char* TreeElem_t;
+typedef char* TreeElem_t;
 
 
 #endif // TREE_CONFIG_H
