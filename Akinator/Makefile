@@ -4,7 +4,7 @@ FLAGS     = -g -std=c++14 -Wall -Wextra -Weffc++ -Wc++0x-compat -Wc++11-compat -
 
 AKINATOR  = Akinator/Akinator.cpp Tree/Tree.cpp main.cpp
 
-EXTERNAL  = ../general/Logger.cpp
+EXTERNAL  = ../general/Logger.cpp 
 
 all:
 	$(CXX) $(FLAGS) $(EXTERNAL) $(AKINATOR) -o Akinator.exe

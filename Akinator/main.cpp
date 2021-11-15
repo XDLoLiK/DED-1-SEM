@@ -13,6 +13,8 @@
 
 int main()
 {
+	// txSpeak("Fucking slaves");
+
 	Logger_Init();
 	
 	Akinator_t akinator = {};
